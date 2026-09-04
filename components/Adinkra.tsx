@@ -69,14 +69,6 @@ export function Adinkra() {
             );
           })}
         </ul>
-
-        <Reveal delay={120}>
-          <p className="mt-400 max-w-measure text-xs leading-relaxed text-ivory/35">
-            Symbol geometry traced from the public domain adinkra set on
-            Wikimedia Commons. Meanings should be confirmed by the palace before
-            launch.
-          </p>
-        </Reveal>
       </div>
     </section>
   );
