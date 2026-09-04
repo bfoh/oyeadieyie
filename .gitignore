@@ -1,0 +1,13 @@
+node_modules/
+.next/
+out/
+.DS_Store
+*.log
+
+# Source media masters. The web ready derivatives live in public/
+pics/
+videos/
+
+# Secrets
+.env
+.env.local

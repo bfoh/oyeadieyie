@@ -1,0 +1,171 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Spacing discipline: use the 3 digit tokens (p-200 = 16px, gap-300 = 24px).
+   Tailwind's own numeric scale is still present but is not the design system. */
+
+@layer base {
+  :root {
+    --ebony: #111111;
+    --gold: #D4AF37;
+    --ivory: #F9F8F3;
+  }
+
+  html {
+    /* Lenis drives scrolling. Native smooth scroll would fight it. */
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Reduced motion never gets the class, so nothing below ever hides. */
+  @media (prefers-reduced-motion: no-preference) {
+    html.has-motion [data-reveal],
+    html.has-motion [data-reveal-item],
+    html.has-motion [data-reveal-group],
+    html.has-motion [data-image-reveal],
+    html.has-motion [data-scrub-words],
+    html.has-motion [data-hero-item],
+    html.has-motion [data-choreo-label],
+    html.has-motion [data-choreo-heading],
+    html.has-motion [data-choreo-lead] {
+      visibility: hidden;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    /* Belt and braces: nothing stays hidden if the class ever lands. */
+    [data-reveal], [data-reveal-item], [data-reveal-group],
+    [data-image-reveal], [data-scrub-words], [data-hero-item],
+    [data-choreo-label], [data-choreo-heading], [data-choreo-lead] {
+      visibility: visible !important;
+      opacity: 1 !important;
+      transform: none !important;
+      filter: none !important;
+      clip-path: none !important;
+    }
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  body {
+    background-color: var(--ebony);
+    /* Stop the blue tap flash on iOS; the components carry their own
+       active states, which are quieter and on brand. */
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
+    color: var(--ivory);
+    font-feature-settings: 'kern' 1, 'liga' 1;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1, h2, h3, h4 { text-wrap: balance; }
+
+  /* Playfair is loose by default at display sizes. Pull it in so headings
+     read as a set line rather than spaced out letters. */
+  .font-display { letter-spacing: -0.018em; }
+  h1.font-display, .display-xl { letter-spacing: -0.028em; }
+  p, li { text-wrap: pretty; }
+
+  /* B9: visible focus ring, never removed */
+  :focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+  :focus:not(:focus-visible) { outline: none; }
+
+  ::selection { background: var(--gold); color: var(--ebony); }
+}
+
+@layer components {
+  .motion-word-mask {
+    display: inline-block;
+    overflow: hidden;
+    vertical-align: top;
+  }
+
+  .motion-word {
+    display: inline-block;
+    will-change: transform, opacity;
+  }
+
+  .hero-line-mask {
+    display: block;
+    overflow: hidden;
+  }
+
+  .hero-line {
+    display: block;
+    will-change: transform, opacity;
+  }
+
+  [data-image-reveal] {
+    overflow: hidden;
+  }
+
+  /* The cloth: fixed behind everything, drifting slower than the page. */
+  .cloth-layer {
+    position: fixed;
+    inset: -14% -6%;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  /* B5: the one permitted gradient, on hero heading text only */
+  .heading-gradient {
+    background-image: linear-gradient(to right, #FFFFFF, #9B9B9B);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .rule-gold {
+    height: 1px;
+    background-color: #D4AF37;
+  }
+
+  /* Eyebrow: rule plus small caps label, used to open every section */
+  .eyebrow {
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #D4AF37;
+  }
+
+  /* Hairline that separates sections without a hard border */
+  .section-edge {
+    border-top: 1px solid #272727;
+  }
+
+  /* Touch devices get no hover, so the pressed state carries the feedback. */
+  @media (hover: none) {
+    .cloth-layer { will-change: auto; }
+  }
+
+  /* Skip link, B10 */
+  .skip-link {
+    position: absolute;
+    left: 12px;
+    top: -100px;
+    z-index: 100;
+    transition: top 300ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .skip-link:focus { top: 12px; }
+}
+
+/* Thin, gold scrollbar so the chrome matches the page */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #111111; }
+::-webkit-scrollbar-thumb {
+  background: #272727;
+  border-radius: 8px;
+  border: 2px solid #111111;
+}
+::-webkit-scrollbar-thumb:hover { background: #8C7423; }

@@ -1,0 +1,70 @@
+import Link from 'next/link';
+import { CONTACT } from '@/lib/content';
+
+export const metadata = {
+  title: 'Terms of use, Office of the Nkosuo Hene of Adrobaa',
+  description:
+    'Terms governing use of this site and of the photography and press material published on it.',
+  robots: { index: true, follow: true },
+};
+
+export default function Terms() {
+  return (
+    <main id="main" className="mx-auto max-w-[760px] px-300 py-800 sm:px-500 sm:py-900">
+      <Link
+        href="/"
+        className="text-sm text-gold transition-colors duration-700 ease-fluid hover:text-ivory"
+      >
+        Back to the home page
+      </Link>
+      <h1 className="mt-300 font-display text-5xl font-600 leading-tight text-ivory">
+        Terms of use
+      </h1>
+      <p className="mt-200 text-sm text-ivory/40">
+        This document is a working draft. Have it reviewed by counsel before the
+        site goes live.
+      </p>
+
+      <div className="mt-500 grid gap-400">
+        <section>
+          <h2 className="font-display text-2xl font-600 text-ivory">
+            Photography and film
+          </h2>
+          <p className="mt-100 text-base leading-relaxed text-ivory/65">
+            Images and footage on this site belong to the Office of the Nkosuo
+            Hene of Adrobaa. Editorial use is permitted where the material comes
+            from the press kit and carries the correct credit. Commercial use
+            requires written permission.
+          </p>
+        </section>
+        <section>
+          <h2 className="font-display text-2xl font-600 text-ivory">
+            Titles and forms of address
+          </h2>
+          <p className="mt-100 text-base leading-relaxed text-ivory/65">
+            Traditional titles carry protocol. The press kit sets out correct
+            usage and we ask that publications follow it.
+          </p>
+        </section>
+        <section>
+          <h2 className="font-display text-2xl font-600 text-ivory">
+            Accuracy
+          </h2>
+          <p className="mt-100 text-base leading-relaxed text-ivory/65">
+            Project information reflects the stage each project has reached at
+            the time of publication. Figures are published once the traditional
+            council has confirmed them.
+          </p>
+        </section>
+        <section>
+          <h2 className="font-display text-2xl font-600 text-ivory">
+            Contact
+          </h2>
+          <p className="mt-100 text-base leading-relaxed text-ivory/65">
+            Questions about these terms go to {CONTACT.email}.
+          </p>
+        </section>
+      </div>
+    </main>
+  );
+}
