@@ -43,6 +43,24 @@ export async function POST(request: Request) {
   const content = await readContent();
   const clean = (v: unknown, max: number) => String(v ?? '').trim().slice(0, max);
 
+  /**
+   * Remove a photograph's file, but only once nothing points at it.
+   *
+   * An update and an event can be attached to the same picture — the office
+   * announces the event, then reports it afterwards using the same frame.
+   * Deleting one entry must not pull the picture out from under the other,
+   * and leaving the file behind for ever fills the store with orphans. So:
+   * count the references that remain, and delete the file only at zero.
+   */
+  const dropFileIfUnused = async (url?: string) => {
+    if (!url) return;
+    const stillUsed =
+      content.updates.some((u) => u.image === url) ||
+      content.events.some((e) => e.imageUrl === url) ||
+      content.gallery.some((g) => g.url === url);
+    if (!stillUsed) await deleteImageFile(url);
+  };
+
   switch (body.action) {
     case 'add-update': {
       const title = clean(body.update?.title, 120);
@@ -64,9 +82,12 @@ export async function POST(request: Request) {
       ];
       break;
     }
-    case 'delete-update':
+    case 'delete-update': {
+      const going = content.updates.find((u) => u.id === body.id);
       content.updates = content.updates.filter((u) => u.id !== body.id);
+      await dropFileIfUnused(going?.image);
       break;
+    }
 
     case 'add-event': {
       const title = clean(body.event?.title, 120);
@@ -89,9 +110,12 @@ export async function POST(request: Request) {
       ].sort((a, b) => a.date.localeCompare(b.date));
       break;
     }
-    case 'delete-event':
+    case 'delete-event': {
+      const going = content.events.find((e) => e.id === body.id);
       content.events = content.events.filter((e) => e.id !== body.id);
+      await dropFileIfUnused(going?.imageUrl);
       break;
+    }
 
     case 'delete-image': {
       const image = content.gallery.find((g) => g.id === body.id);

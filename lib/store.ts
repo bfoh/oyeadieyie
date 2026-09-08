@@ -135,11 +135,17 @@ export async function saveImage(
   };
 }
 
-/** Remove a photograph's file. Built-in images have no file to remove. */
-export async function deleteImageFile(pathname: string): Promise<void> {
-  if (!pathname) return;
+/**
+ * Remove a photograph's file.
+ *
+ * Takes either a blob pathname or a full blob URL; the SDK accepts both, and
+ * gallery entries record a pathname while attachments record only a URL.
+ * Built-in images have neither and are skipped.
+ */
+export async function deleteImageFile(pathnameOrUrl: string): Promise<void> {
+  if (!pathnameOrUrl) return;
   try {
-    await del(pathname);
+    await del(pathnameOrUrl);
   } catch {
     /* The record is going either way; a missing file is not a failure. */
   }
