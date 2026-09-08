@@ -482,6 +482,34 @@ Two rules worth keeping:
 Public pages read the store with `revalidate = 30`, so a change shows within
 about half a minute without making each visitor wait on a fetch.
 
+### Enquiries
+
+`/admin/enquiries`. Everything sent through the form on the home page.
+
+**Capture first, notify second.** `app/api/engage/route.ts` writes the enquiry
+to the store *before* it attempts any email, so storage is the record and email
+only a convenience. It used to do the opposite: with no Resend key configured
+it returned 503 and the enquiry was gone — every appearance request,
+partnership approach, diaspora offer and press enquiry lost, on a site whose
+entire purpose is to attract them. The route now succeeds whenever the enquiry
+is safely stored, and reports failure only when nothing anywhere has a copy.
+
+`RESEND_API_KEY` and `ENGAGE_TO` remain optional; setting them adds an email
+notification on top.
+
+**Clash detection.** The site tells readers twice that appearances are
+"confirmed against the traditional calendar, which takes precedence over all
+other commitments", but the date lived inside a prose field where nothing could
+check it. The form now takes an optional requested date, and the inbox compares
+it against the events the office already keeps — flagging anything within two
+days, because a durbar occupies the days around it as well as its own.
+
+**The form is a public write path**, the one place a stranger can grow a
+document that every public page render fetches. Hence the flood window in the
+route, and `MAX_ENQUIRIES`. Trimming only ever removes enquiries the office has
+already dealt with, oldest first, so a flood can never push an unanswered one
+out of the record.
+
 ### The branding hub
 
 `lib/brandAssets.ts` declares what the office can issue and the fields each

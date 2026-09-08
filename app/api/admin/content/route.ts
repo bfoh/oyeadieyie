@@ -26,6 +26,8 @@ type Action =
   | { action: 'add-event'; event: { title: string; date: string; time?: string; place?: string; body?: string; imageUrl?: string; imageAlt?: string } }
   | { action: 'delete-event'; id: string }
   | { action: 'delete-image'; id: string }
+  | { action: 'set-enquiry'; id: string; status?: string; note?: string }
+  | { action: 'delete-enquiry'; id: string }
   | { action: 'set-contact'; contact: Partial<SiteContent['contact']> };
 
 export async function POST(request: Request) {
@@ -150,6 +152,24 @@ export async function POST(request: Request) {
       await dropFileIfUnused(image?.url);
       break;
     }
+
+    case 'set-enquiry': {
+      const found = content.enquiries.find((e) => e.id === body.id);
+      if (!found) {
+        return NextResponse.json({ error: 'not_found' }, { status: 404 });
+      }
+      const allowed = ['new', 'replied', 'declined', 'archived'] as const;
+      const status = clean(body.status, 20);
+      if (status && (allowed as readonly string[]).includes(status)) {
+        found.status = status as (typeof allowed)[number];
+      }
+      if ('note' in body) found.note = clean(body.note, 600) || undefined;
+      break;
+    }
+
+    case 'delete-enquiry':
+      content.enquiries = content.enquiries.filter((e) => e.id !== body.id);
+      break;
 
     case 'set-contact': {
       /* The only write path that used to spread its input straight into the

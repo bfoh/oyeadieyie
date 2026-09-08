@@ -36,10 +36,38 @@ export type SiteEvent = {
   imageAlt?: string;
 };
 
+/**
+ * Something a member of the public sent to the office.
+ *
+ * Kept in the store rather than only emailed, because email was the single
+ * point of failure: with no Resend key configured the route returned 503 and
+ * every appearance request, partnership approach, diaspora offer and press
+ * enquiry was simply lost. Storage is the record; email is a notification.
+ */
+export type EnquiryStatus = 'new' | 'replied' | 'declined' | 'archived';
+
+export type Enquiry = {
+  id: string;
+  receivedAt: string;
+  /* One of the ENGAGE_ROUTES ids. */
+  route: string;
+  name: string;
+  email: string;
+  organisation: string;
+  detail: string;
+  /* The date the sender is asking for, when they gave one. This is what makes
+     it checkable against the ceremonial calendar. */
+  requestedDate?: string;
+  status: EnquiryStatus;
+  /* The office's own note, never shown to the sender. */
+  note?: string;
+};
+
 export type SiteContent = {
   updates: Update[];
   events: SiteEvent[];
   gallery: GalleryImage[];
+  enquiries: Enquiry[];
   contact: {
     email: string;
     phone: string;
@@ -91,6 +119,7 @@ export function baseContent(): SiteContent {
       pathname: '',
       addedAt: '',
     })),
+    enquiries: [],
     contact: {
       email: CONTACT.email,
       phone: CONTACT.phone,
@@ -100,6 +129,15 @@ export function baseContent(): SiteContent {
     updatedAt: '',
   };
 }
+
+/**
+ * How many enquiries are kept.
+ *
+ * The engagement form writes to this document without a session, so the cap is
+ * what stops a bot inflating a file that every public page render fetches.
+ * Oldest go first, and only ones the office has already dealt with.
+ */
+export const MAX_ENQUIRIES = 500;
 
 /**
  * Read the document.
@@ -144,6 +182,7 @@ export async function readContent(
       updates: parsed.updates ?? base.updates,
       events: parsed.events ?? base.events,
       gallery: parsed.gallery ?? base.gallery,
+      enquiries: parsed.enquiries ?? base.enquiries,
       contact: { ...base.contact, ...(parsed.contact ?? {}) },
       updatedAt: parsed.updatedAt ?? '',
     };

@@ -40,7 +40,16 @@ export default async function AdminDashboard() {
     (e) => e.date >= new Date().toISOString().slice(0, 10),
   ).length;
 
+  const unanswered = content.enquiries.filter((e) => e.status === 'new').length;
+
   const stats = [
+    {
+      label: 'Waiting on a reply',
+      value: unanswered,
+      note: content.enquiries.length
+        ? `${content.enquiries.length} received in all`
+        : 'No enquiries yet',
+    },
     { label: 'Projects on the agenda', value: PROJECTS.length, note: `${delivered} delivered` },
     {
       label: 'Dated updates',
@@ -120,14 +129,36 @@ export default async function AdminDashboard() {
         </section>
 
         <section className="rounded-2xl border border-white/10 bg-ebony-raised p-300">
-          <h2 className="font-display text-2xl font-600 text-ivory">Issue something</h2>
+          <h2 className="font-display text-2xl font-600 text-ivory">
+            {unanswered > 0 ? 'Somebody is waiting' : 'Issue something'}
+          </h2>
+          {unanswered > 0 && (
+            <>
+              <p className="mt-100 text-sm leading-relaxed text-ivory/60">
+                {unanswered} {unanswered === 1 ? 'enquiry has' : 'enquiries have'} come
+                through the form and {unanswered === 1 ? 'has' : 'have'} not been
+                answered.
+              </p>
+              <Link
+                href="/admin/enquiries"
+                className="mt-300 inline-flex min-h-[44px] items-center rounded-xl bg-gold px-200 text-sm font-semibold text-ebony transition-all hover:bg-[#e6c34d]"
+              >
+                Open the enquiries
+              </Link>
+            </>
+          )}
           <p className="mt-100 text-sm leading-relaxed text-ivory/60">
             Letterheads, durbar invitations, citations, site boards and social
             cards, all set in the office&apos;s own identity.
           </p>
           <Link
             href="/admin/branding-hub"
-            className="mt-300 inline-flex min-h-[44px] items-center rounded-xl bg-gold px-200 text-sm font-semibold text-ebony transition-all hover:bg-[#e6c34d]"
+            className={[
+              'mt-300 inline-flex min-h-[44px] items-center rounded-xl px-200 text-sm font-semibold transition-all',
+              unanswered > 0
+                ? 'border border-white/15 text-ivory/80 hover:border-gold hover:text-gold'
+                : 'bg-gold text-ebony hover:bg-[#e6c34d]',
+            ].join(' ')}
           >
             Open the branding hub
           </Link>

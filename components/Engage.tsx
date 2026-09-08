@@ -96,6 +96,7 @@ export function Engage() {
           organisation: String(data.get('organisation') ?? ''),
           detail: String(data.get('detail') ?? ''),
           route: String(data.get('route') ?? ''),
+          requestedDate: String(data.get('requestedDate') ?? ''),
           website: String(data.get('website') ?? ''),
         }),
       });
@@ -396,12 +397,35 @@ export function Engage() {
                       )}
                     </div>
 
+                    <div className="sm:col-span-1">
+                      <label
+                        htmlFor="requestedDate"
+                        className="block text-sm font-semibold text-ivory"
+                      >
+                        Date you have in mind
+                      </label>
+                      <input
+                        id="requestedDate"
+                        name="requestedDate"
+                        type="date"
+                        className={`${field} mt-75 border-ebony-line focus:border-gold`}
+                      />
+                      {/* Optional, and the reason it exists: the office checks
+                          every request against the ceremonial calendar, and
+                          until now the date was buried in prose where nothing
+                          could check it. */}
+                      <p className="mt-75 text-xs leading-relaxed text-ivory/50">
+                        If you have one. It is checked against the traditional
+                        calendar, which takes precedence.
+                      </p>
+                    </div>
+
                     <div className="sm:col-span-2">
                       <label
                         htmlFor="detail"
                         className="block text-sm font-semibold text-ivory"
                       >
-                        Date, place and format
+                        Place and format
                       </label>
                       <textarea
                         id="detail"

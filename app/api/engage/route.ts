@@ -1,18 +1,30 @@
 import { NextResponse } from 'next/server';
 import { ENGAGE_ROUTES } from '@/lib/content';
+import {
+  MAX_ENQUIRIES,
+  newId,
+  readContent,
+  storeConfigured,
+  writeContent,
+  type Enquiry,
+} from '@/lib/store';
 
 /**
  * The engagement inbox.
  *
- * The palace mailbox is configured with two environment variables:
+ * Capture first, notify second.
+ *
+ * The enquiry is written to the store before any email is attempted, so
+ * storage is the record and email only a convenience. This route used to do
+ * the opposite: with no Resend key configured it returned 503 and the enquiry
+ * was gone — every appearance request, partnership approach, diaspora offer
+ * and press enquiry lost, on a site whose entire purpose is to attract them.
+ *
+ * The office reads them at /admin/enquiries. Email, when these are set, is an
+ * extra:
  *
  *   RESEND_API_KEY   an API key from resend.com
  *   ENGAGE_TO        the address that should receive the requests
- *
- * Until both are set this route reports that it cannot deliver, and the form
- * shows the reader the office address instead. It never reports success it
- * cannot back up: an appearance request that silently disappears costs the
- * office an engagement and leaves the sender believing they were ignored.
  */
 
 const ROUTE_IDS = new Set(ENGAGE_ROUTES.map((r) => r.id));
@@ -23,9 +35,17 @@ type Payload = {
   organisation: string;
   detail: string;
   route: string;
+  /* The date being asked for, when the sender gives one. */
+  requestedDate?: string;
   /* Honeypot. Real people leave it empty; most bots fill everything. */
   website?: string;
 };
+
+/* This route writes to the shared document without a session, so it is the one
+   place a stranger can grow the file that every public page render fetches.
+   No more than this many may arrive in the window. */
+const FLOOD_WINDOW_MS = 10 * 60 * 1000;
+const FLOOD_LIMIT = 8;
 
 function clean(value: unknown, max: number): string {
   return typeof value === 'string' ? value.trim().slice(0, max) : '';
@@ -63,26 +83,90 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'invalid_fields' }, { status: 400 });
   }
 
-  const apiKey = process.env.RESEND_API_KEY;
-  const to = process.env.ENGAGE_TO;
-
-  if (!apiKey || !to) {
-    /* Not a client error: the request was fine, the office inbox is not
-       wired up yet. 503 so monitoring can see it and the form can say so. */
-    return NextResponse.json({ error: 'not_configured' }, { status: 503 });
-  }
+  const requestedDate = (() => {
+    const d = clean(body.requestedDate, 10);
+    return /^\d{4}-\d{2}-\d{2}$/.test(d) && !Number.isNaN(Date.parse(`${d}T00:00:00Z`))
+      ? d
+      : undefined;
+  })();
 
   const routeTitle =
     ENGAGE_ROUTES.find((r) => r.id === route)?.title ?? route;
+
+  /* ---- capture ---- */
+  let stored = false;
+  if (storeConfigured()) {
+    try {
+      const content = await readContent({ fresh: true });
+
+      const since = Date.now() - FLOOD_WINDOW_MS;
+      const recent = content.enquiries.filter(
+        (e) => Date.parse(e.receivedAt) > since,
+      ).length;
+      if (recent >= FLOOD_LIMIT) {
+        /* Answer as though it worked, so a bot learns nothing, and write
+           nothing. A genuine sender in this window is vanishingly unlikely
+           and can still reach the office by phone or WhatsApp. */
+        return NextResponse.json({ ok: true });
+      }
+
+      const enquiry: Enquiry = {
+        id: newId(),
+        receivedAt: new Date().toISOString(),
+        route,
+        name,
+        email,
+        organisation,
+        detail,
+        requestedDate,
+        status: 'new',
+      };
+
+      /* Trim only what the office has already dealt with, oldest first, so a
+         flood can never push an unanswered enquiry out of the record. */
+      let enquiries = [enquiry, ...content.enquiries];
+      if (enquiries.length > MAX_ENQUIRIES) {
+        const keep = enquiries.filter((e) => e.status === 'new');
+        const rest = enquiries
+          .filter((e) => e.status !== 'new')
+          .slice(0, Math.max(0, MAX_ENQUIRIES - keep.length));
+        enquiries = [...keep, ...rest].sort((a, b) =>
+          b.receivedAt.localeCompare(a.receivedAt),
+        );
+      }
+
+      content.enquiries = enquiries;
+      await writeContent(content);
+      stored = true;
+    } catch {
+      /* Fall through to email; the sender is told the truth either way. */
+    }
+  }
+
+  const apiKey = process.env.RESEND_API_KEY;
+  const to = process.env.ENGAGE_TO;
+
+  /* ---- notify ---- */
+  if (!apiKey || !to) {
+    /* No mailbox wired up. If the enquiry is in the store the office will
+       still see it, so this is a success; only report failure when nothing
+       anywhere has a copy. */
+    return stored
+      ? NextResponse.json({ ok: true })
+      : NextResponse.json({ error: 'not_configured' }, { status: 503 });
+  }
 
   const lines = [
     `Route: ${routeTitle}`,
     `Name: ${name}`,
     `Email: ${email}`,
     `Organisation: ${organisation}`,
+    requestedDate ? `Date requested: ${requestedDate}` : '',
     '',
     detail,
-  ].join('\n');
+  ]
+    .filter((l) => l !== '')
+    .join('\n');
 
   try {
     const res = await fetch('https://api.resend.com/emails', {
@@ -100,11 +184,14 @@ export async function POST(request: Request) {
       }),
     });
 
-    if (!res.ok) {
+    if (!res.ok && !stored) {
       return NextResponse.json({ error: 'send_failed' }, { status: 502 });
     }
   } catch {
-    return NextResponse.json({ error: 'send_failed' }, { status: 502 });
+    /* The email failed. If it is in the store the office still has it. */
+    if (!stored) {
+      return NextResponse.json({ error: 'send_failed' }, { status: 502 });
+    }
   }
 
   return NextResponse.json({ ok: true });
