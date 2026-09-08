@@ -13,10 +13,16 @@ export default function AdminLogin() {
   return (
     <main className="flex min-h-[100svh] items-center justify-center bg-ebony px-300 py-500">
       <div className="w-full max-w-[400px]">
-        {/* The crest sits on every other admin page, in the nav. This page is
-            outside that layout, so it carried no mark at all — the one screen
-            an aide sees before signing in looked like it belonged to nothing. */}
-        <Crest className="h-[44px] w-[44px] text-gold" />
+        {/* The same lockup the sidebar carries — crest and wordmark together.
+            This page sits outside the admin layout, so it had no mark at all,
+            and a crest on its own left the column looking unfinished beside
+            the full-width type below it. */}
+        <span className="flex items-center gap-150">
+          <Crest className="h-[40px] w-[40px] shrink-0 text-gold" />
+          <span className="font-wordmark text-sm font-600 uppercase leading-none tracking-[0.16em] text-ivory">
+            {CHIEF.shortName}
+          </span>
+        </span>
         <p className="mt-300 text-xs font-semibold uppercase tracking-[0.2em] text-gold">
           Office of the {CHIEF.title}
         </p>

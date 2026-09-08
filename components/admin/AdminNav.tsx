@@ -9,6 +9,7 @@ import { Crest } from '../Crest';
 const LINKS = [
   { href: '/admin', label: 'Dashboard' },
   { href: '/admin/enquiries', label: 'Enquiries' },
+  { href: '/admin/calendar', label: 'Calendar' },
   { href: '/admin/content', label: 'Manage the site' },
   { href: '/admin/projects', label: 'Development record' },
   { href: '/admin/branding-hub', label: 'Branding hub' },
