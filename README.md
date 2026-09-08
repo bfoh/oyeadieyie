@@ -529,6 +529,12 @@ Three things worth keeping:
 - **The download is exported from the very node on screen**, via
   `html-to-image` at 3x, so the file cannot drift from the approved preview.
   PDFs wrap that image at the sheet's real millimetre size.
+- **A scaled preview must be out of the layout flow.** `transform: scale()`
+  shrinks a box on screen but leaves its ORIGINAL width in the layout, so an
+  A4 sheet drawn at 546px kept a 546px footprint inside every card. On a phone
+  that made each card wider than the screen, and the right of it was silently
+  cut off by the admin's `overflow-x-hidden`. The artwork is absolutely
+  positioned inside its frame, so it cannot push anything.
 - **Type inside a preview is set in absolute pixels against a canonical
   canvas**, and every appearance scales the whole thing with a transform.
   Millimetre assets scale by physical size, so a calling card stays small

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ASSET_CATEGORIES,
   BRAND_ASSETS,
@@ -28,9 +28,12 @@ import { WritingAssistant } from './WritingAssistant';
 
 type Values = Record<string, string>;
 
-/* Keep the editor preview inside the panel without ever cropping it. */
-function editorScale(size: { w: number; h: number }) {
-  return Math.min(1, 560 / size.w, 620 / size.h);
+/* Keep the editor preview inside the panel without ever cropping it, and
+   inside the phone as well: the panel is the smaller of the two on a narrow
+   screen, and a sheet that needs sideways scrolling is a sheet the office
+   cannot check. */
+function editorScale(size: { w: number; h: number }, available: number) {
+  return Math.min(1, available / size.w, 620 / size.h);
 }
 
 /**
@@ -62,16 +65,24 @@ function AssetThumb({ asset }: { asset: BrandAsset }) {
   const scale = fitScale(size, 250, THUMB_H - 24);
   return (
     <div
-      className="relative flex items-center justify-center overflow-hidden rounded-xl border border-white/5 bg-black/40"
+      className="relative overflow-hidden rounded-xl border border-white/5 bg-black/40"
       style={{ height: THUMB_H }}
     >
+      {/* Absolutely positioned, and that is the point: `transform: scale()`
+          shrinks a box on screen but leaves its ORIGINAL width in the layout.
+          In flow, an A4 sheet drawn at 546px kept a 546px footprint, so every
+          card was wider than a phone and the right of it was cut off by the
+          admin's overflow guard. Out of flow, the artwork cannot push the
+          card at all. */}
       <div
         style={{
+          position: 'absolute',
+          left: '50%',
+          top: '50%',
           width: size.w,
           height: size.h,
-          transform: `scale(${scale})`,
+          transform: `translate(-50%, -50%) scale(${scale})`,
           transformOrigin: 'center',
-          flex: 'none',
           boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
         }}
       >
@@ -83,6 +94,9 @@ function AssetThumb({ asset }: { asset: BrandAsset }) {
 
 export function BrandingHub() {
   const [category, setCategory] = useState<BrandAsset['category']>('stationery');
+  /* Measured, not guessed: the preview panel is a different width on a phone,
+     a tablet and a desktop, and the sheet has to fit whichever it is. */
+  const [stageWidth, setStageWidth] = useState(560);
   const [openId, setOpenId] = useState<string | null>(null);
   const [values, setValues] = useState<Values>({});
   const [busy, setBusy] = useState<string | null>(null);
@@ -90,6 +104,18 @@ export function BrandingHub() {
   const stageRef = useRef<HTMLDivElement>(null);
 
   const asset = useMemo(() => BRAND_ASSETS.find((a) => a.id === openId) ?? null, [openId]);
+
+  useEffect(() => {
+    const measure = () => {
+      const w = window.innerWidth;
+      /* Panel padding on both sides, and the sidebar above lg. */
+      const panel = w >= 1024 ? Math.min(560, (w - 248) * 0.55) : w - 96;
+      setStageWidth(Math.max(220, panel));
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, []);
 
   function open(a: BrandAsset) {
     setValues(defaultValues(a));
@@ -182,8 +208,8 @@ export function BrandingHub() {
                 the panel it was previewed in. */}
             <div
               style={{
-                width: size.w * editorScale(size),
-                height: size.h * editorScale(size),
+                width: size.w * editorScale(size, stageWidth),
+                height: size.h * editorScale(size, stageWidth),
                 flex: 'none',
               }}
             >
@@ -192,7 +218,7 @@ export function BrandingHub() {
                 style={{
                   width: size.w,
                   height: size.h,
-                  transform: `scale(${editorScale(size)})`,
+                  transform: `scale(${editorScale(size, stageWidth)})`,
                   transformOrigin: 'top left',
                   boxShadow: '0 24px 70px rgba(0,0,0,0.6)',
                 }}
