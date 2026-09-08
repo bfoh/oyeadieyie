@@ -40,8 +40,8 @@ export function AdinkraCloth({ opacity = 0.04 }: { opacity?: number }) {
       const vh = window.innerHeight;
       /* Larger stamps on a narrow screen. A fine texture sized for a desktop
          just turns to noise at phone width. */
-      const cell = vw < 640 ? 96 : vw < 1024 ? 88 : 84;
-      const gap = Math.round(cell * 0.62);
+      const cell = vw < 640 ? 104 : vw < 1024 ? 98 : 94;
+      const gap = Math.round(cell * 0.78);
       const pitch = cell + gap;
       /* The layer is inset past the viewport on every side so the parallax
          drift never exposes an edge. */
@@ -91,7 +91,12 @@ export function AdinkraCloth({ opacity = 0.04 }: { opacity?: number }) {
   }
 
   return (
-    <div className="cloth-layer" aria-hidden="true" data-parallax="0.06">
+    /* No data-parallax here any more. Six per cent of drift was not
+       perceptible, and paying for it meant this fixed, full-viewport layer
+       was re-composited on every scroll frame — underneath a backdrop-blurred
+       nav, which then had to re-blur moving content continuously. Static, it
+       is painted once and never again. */
+    <div className="cloth-layer" aria-hidden="true">
       <svg
         width="100%"
         height="100%"

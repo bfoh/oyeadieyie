@@ -374,6 +374,35 @@ the numeric keys. If headings ever look flat again, check that block first.
   orientation is unknown at render time, the server sent a `<video>` with no
   source, and on iPhone it simply sat there. `Hero.tsx` now assigns `src` to
   the element itself, which invokes resource selection everywhere, once.
+- **Encode at the master's frame rate, which is 30.** A 24fps video on a 60Hz
+  display gets 2.5 refreshes per frame, so frames alternate between 2 and 3
+  refreshes. That cadence is judder, and it reads as "the video stutters" while
+  every metric reports zero dropped frames. 30fps divides 60 exactly. This was
+  the laptop stutter; downsampling to 24 for file size caused it.
+- **Level 3.1, High profile, yuv420p in TV range.** ffmpeg had been tagging the
+  output `yuvj420p` (full-range JPEG colour, which Safari handles badly) and
+  choosing Level 5.0 for a 640px clip, which older iOS decoders refuse
+  outright. End the filter chain with `format=yuv420p,setrange=tv` and set
+  `-profile:v high -level:v 3.1` explicitly; never let ffmpeg pick the level.
+- **The hero video is sourced during HTML parse, by an inline script directly
+  beneath the element.** This is what finally made an iPhone autoplay it.
+  Safari grants autoplay to a muted inline video that has a source when the
+  parser reaches it, and refuses a `play()` call made later from a hydration
+  effect. Orientation is only knowable in the browser, so React cannot put the
+  `src` in server-rendered HTML — the inline script can. The React effect no
+  longer touches the source; it only retries after Low Power Mode refusals, on
+  first touch, and when a backgrounded tab returns.
+- **Scrims are gradients, never `mask-image`.** A mask makes the compositor
+  re-composite the masked area against whatever is beneath it, and beneath
+  these is a playing video. A `linear-gradient` background is the same picture
+  for free.
+- **`scrub: true` on the parallax, not a number.** Lenis already smooths the
+  scroll position; a numeric scrub adds a second lerp on top, and two smoothers
+  chained make the hero swim behind the page instead of tracking it.
+- **The cloth layer does not move.** Six per cent of parallax drift was not
+  perceptible, and paying for it meant a fixed, full-viewport SVG layer was
+  re-composited every scroll frame underneath a backdrop-blurred nav, which
+  then had to re-blur moving content continuously.
 - **The hero loop is cross-dissolved.** The master is a single handheld shot
   in which the camera never returns to where it started, so no window of it
   loops naturally: the best candidate still differed by 71/255 between its

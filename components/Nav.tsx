@@ -214,8 +214,12 @@ export function Nav() {
                    smaller size so it stays on one line inside the pill. */
                 className="whitespace-nowrap font-wordmark text-[12px] font-600 uppercase leading-none tracking-[0.16em] text-ivory sm:text-[13.5px] sm:tracking-[0.18em] lg:text-[15px] lg:tracking-[0.15em]"
               >
-                <span className="lg:hidden">Nana Oyeadieyie</span>
-                <span className="hidden lg:inline">{CHIEF.fullName}</span>
+                {/* The full name only once there is genuinely room for it.
+                    Between the lg breakpoint and about 1250px the links, the
+                    lens control and the action leave the wordmark too little
+                    space, and it wrapped onto two lines. */}
+                <span className="xl:hidden">Nana Oyeadieyie</span>
+                <span className="hidden xl:inline">{CHIEF.fullName}</span>
               </span>
             </a>
 

@@ -275,6 +275,10 @@ export function MotionProvider() {
         });
 
         /* ---------------- parallax ---------------- */
+        /* scrub: true, not a number. Lenis already smooths the scroll
+           position; a numeric scrub adds a second lerp on top of it, and two
+           smoothers chained make the hero swim behind the page rather than
+           track it. One smoother, applied once. */
         gsap.utils.toArray<HTMLElement>('[data-parallax]').forEach((layer) => {
           const speed = Number(layer.dataset.parallax || 0.16);
           const section = layer.closest('[data-parallax-section]') || layer;
@@ -285,7 +289,7 @@ export function MotionProvider() {
               trigger: section,
               start: 'top bottom',
               end: 'bottom top',
-              scrub: 1.2,
+              scrub: true,
               invalidateOnRefresh: true,
             },
           });

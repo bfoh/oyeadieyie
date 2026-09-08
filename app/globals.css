@@ -145,14 +145,23 @@
     overflow: hidden;
     pointer-events: none;
     user-select: none;
-    will-change: transform;
+    /* Promoted and isolated, but no longer animated: it is painted once and
+       then simply sits there. `will-change` is deliberately absent — it is
+       for things that are about to move, and this no longer moves. */
     transform: translateZ(0);
     contain: strict;
   }
 
-  /* Same reasoning for the hero footage, which is parallaxed while playing. */
+  /* The hero footage is parallaxed while it plays, so it keeps its own
+     compositor layer. The video inside gets one too: a video being moved by
+     a transform should be handed to the compositor whole, not repainted. */
   .hero-media {
     will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  .hero-video {
     transform: translateZ(0);
     backface-visibility: hidden;
   }
