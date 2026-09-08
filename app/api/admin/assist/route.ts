@@ -73,7 +73,9 @@ export async function POST(request: Request) {
         '- Plain, exact, unhurried. This is a traditional office, not a brand.',
         '- Never use marketing language: no "excited to announce", no "proud to", no exclamation marks, no superlatives.',
         '- "Nana" is the honorific and is never dropped. Nkosuo Hene means Development Chief and is a working title, not an honorary one.',
-        '- Claim nothing that has not been stated. If a figure or a date is not given to you, leave it out rather than inventing it.',
+        '- Claim nothing that has not been stated. If a figure, a name or a place is not given to you, leave it out rather than inventing it.',
+        '- NEVER complete a partial date. Given "the 14th", write "the 14th" — not a month, not a year. Given no date at all, do not write one. An invented date on an official communication is the worst thing you can do here.',
+        '- Do not restate the office\'s own name unless the text needs it; the letterhead already carries it.',
         '- Return only the text asked for. No preamble, no quotation marks around it, no options, no commentary.',
       ].join('\n'),
       prompt: [
