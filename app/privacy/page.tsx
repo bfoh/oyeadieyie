@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { contactValue } from '@/lib/content';
+import { isSupplied } from '@/lib/content';
+import { readContent } from '@/lib/store';
 
 /**
  * TO DO BEFORE ANY LEGAL RELIANCE: have this reviewed by counsel. It is
@@ -17,9 +18,16 @@ export const metadata = {
   robots: { index: true, follow: true },
 };
 
-export default function Privacy() {
+/* Contact details are editable in the admin, so they have to be read at
+   request time. These pages used the build-time constants, which meant the
+   office could set the press desk address and this page would keep showing
+   nothing until someone redeployed. */
+export const revalidate = 30;
+
+export default async function Privacy() {
+  const { contact } = await readContent();
   /* Null until the palace supplies it, so no bracketed token is published. */
-  const email = contactValue('email');
+  const email = isSupplied(contact.email) ? contact.email : null;
 
   return (
     <main id="main" className="mx-auto max-w-[760px] px-300 py-800 sm:px-500 sm:py-900">

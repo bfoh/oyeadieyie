@@ -1,4 +1,5 @@
 import type { SiteEvent } from '@/lib/store';
+import { parseISODate } from '@/lib/content';
 import { Reveal } from './Reveal';
 
 /**
@@ -9,8 +10,8 @@ import { Reveal } from './Reveal';
  * rather than an empty heading.
  */
 function formatDate(iso: string) {
-  const d = new Date(`${iso}T00:00:00Z`);
-  if (Number.isNaN(d.getTime())) return iso;
+  const d = parseISODate(iso);
+  if (!d) return iso;
   return new Intl.DateTimeFormat('en-GB', {
     day: 'numeric',
     month: 'long',
@@ -21,8 +22,10 @@ function formatDate(iso: string) {
 
 export function Events({ events }: { events: SiteEvent[] }) {
   const today = new Date().toISOString().slice(0, 10);
+  /* A garbage date string sorts above a real one, so it would survive this
+     filter and then be parsed unguarded below. Drop anything unparseable. */
   const upcoming = events
-    .filter((e) => e.date >= today)
+    .filter((e) => parseISODate(e.date) !== null && e.date >= today)
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(0, 4);
 
@@ -52,17 +55,18 @@ export function Events({ events }: { events: SiteEvent[] }) {
         </Reveal>
 
         <ul data-reveal-group className="mt-600 grid gap-300 md:grid-cols-2">
-          {upcoming.map((ev, i) => (
+          {upcoming.map((ev, i) => {
+            const day = parseISODate(ev.date)!;
+            return (
             <Reveal as="li" item key={ev.id} delay={i * 70}>
               <article className="flex h-full gap-300 rounded-2xl border border-ebony-line bg-ebony p-300 transition-all duration-700 ease-fluid hover:border-gold-dim">
                 <div className="shrink-0 text-center">
                   <div className="rounded-xl border border-gold/40 px-200 py-100">
                     <div className="font-display text-3xl font-600 leading-none text-gold">
-                      {new Date(`${ev.date}T00:00:00Z`).getUTCDate()}
+                      {day.getUTCDate()}
                     </div>
                     <div className="mt-50 text-xs uppercase tracking-[0.14em] text-ivory/60">
-                      {new Intl.DateTimeFormat('en-GB', { month: 'short', timeZone: 'UTC' })
-                        .format(new Date(`${ev.date}T00:00:00Z`))}
+                      {new Intl.DateTimeFormat('en-GB', { month: 'short', timeZone: 'UTC' }).format(day)}
                     </div>
                   </div>
                 </div>
@@ -89,7 +93,8 @@ export function Events({ events }: { events: SiteEvent[] }) {
                 </div>
               </article>
             </Reveal>
-          ))}
+            );
+          })}
         </ul>
       </div>
     </section>

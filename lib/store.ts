@@ -49,7 +49,31 @@ export type SiteContent = {
   updatedAt: string;
 };
 
-const DOC = 'content/site.json';
+/**
+ * The document is written to a NEW path every time, never overwritten.
+ *
+ * Overwriting one fixed path cannot give correct read-after-write here. The
+ * blob is served from a CDN with a thirty day max-age, and a read taken
+ * straight after a write returned the PREVIOUS document — verified: the blob's
+ * uploadedAt was four minutes newer than the `updatedAt` inside the body it
+ * served, with an `age` of 251 seconds. A cache-busting query is ignored, and
+ * `cacheControlMaxAge: 0` was not honoured.
+ *
+ * That is worse than a stale read. Every write is a read-modify-write, so the
+ * next write starts from the stale copy and persists it, silently undoing the
+ * change just reported as saved. It is almost certainly the real cause of the
+ * "delete resurrected the update" bug that was previously blamed on Next's
+ * fetch cache alone.
+ *
+ * Writing a fresh path each time sidesteps the CDN entirely: `list()` is an
+ * authenticated API call rather than a cached asset, and the newest URL it
+ * returns has never been fetched before, so it cannot be served stale.
+ */
+const DOC_PREFIX = 'content/site-';
+const LEGACY_DOC = 'content/site.json';
+
+/* Old versions are pruned on write; a couple are kept as a cheap safety net. */
+const KEEP_VERSIONS = 3;
 
 export function storeConfigured(): boolean {
   return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
@@ -90,13 +114,24 @@ export function baseContent(): SiteContent {
  * resurrected the first one, because the second delete started from a copy
  * taken before the first had landed. Writes must always read fresh.
  */
+async function newestDocument() {
+  const { blobs } = await list({ prefix: DOC_PREFIX });
+  if (blobs.length) {
+    /* Paths carry a millisecond stamp, so the highest name is the newest. */
+    return [...blobs].sort((a, b) => b.pathname.localeCompare(a.pathname))[0];
+  }
+  /* Nothing versioned yet: fall back to the single document written before
+     this scheme existed, so an existing store keeps its content. */
+  const legacy = await list({ prefix: LEGACY_DOC, limit: 1 });
+  return legacy.blobs.find((b) => b.pathname === LEGACY_DOC) ?? null;
+}
+
 export async function readContent(
   { fresh = false }: { fresh?: boolean } = {},
 ): Promise<SiteContent> {
   if (!storeConfigured()) return baseContent();
   try {
-    const { blobs } = await list({ prefix: DOC, limit: 1 });
-    const found = blobs.find((b) => b.pathname === DOC);
+    const found = await newestDocument();
     if (!found) return baseContent();
     const res = await fetch(
       found.url,
@@ -117,16 +152,32 @@ export async function readContent(
   }
 }
 
-/** Write the document back. Only ever called from an authenticated route. */
+/** Write the document. Only ever called from an authenticated route. */
 export async function writeContent(content: SiteContent): Promise<void> {
-  await put(DOC, JSON.stringify({ ...content, updatedAt: new Date().toISOString() }, null, 2), {
+  const body = JSON.stringify(
+    { ...content, updatedAt: new Date().toISOString() },
+    null,
+    2,
+  );
+
+  /* A new path every time — see the note on DOC_PREFIX. */
+  await put(`${DOC_PREFIX}${Date.now()}.json`, body, {
     access: 'public',
     contentType: 'application/json',
-    /* One document, overwritten in place, so its URL stays stable and the
-       store never fills with orphaned copies. */
     addRandomSuffix: false,
-    allowOverwrite: true,
   });
+
+  /* Prune, so the store does not fill with every revision ever made. Failing
+     to prune must never fail the write: the content is already saved. */
+  try {
+    const { blobs } = await list({ prefix: DOC_PREFIX });
+    const stale = [...blobs]
+      .sort((a, b) => b.pathname.localeCompare(a.pathname))
+      .slice(KEEP_VERSIONS);
+    await Promise.all(stale.map((b) => del(b.url)));
+  } catch {
+    /* Left for the next write to tidy. */
+  }
 }
 
 /** Store an uploaded photograph and return the record for the document. */

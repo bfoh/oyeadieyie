@@ -44,8 +44,22 @@ export async function POST(request: Request) {
   }
 
   /* Fresh, never cached: this is a read-modify-write. */
+  /* Fresh, never cached: this is a read-modify-write. */
   const content = await readContent({ fresh: true });
-  const clean = (v: unknown, max: number) => String(v ?? '').trim().slice(0, max);
+
+  const clean = (v: unknown, max: number) =>
+    typeof v === 'string' ? v.trim().slice(0, max) : '';
+
+  /* A date is the one field that can take the public site down: an unparseable
+     string reaches Intl.format in a server component and throws. The date
+     input in the admin enforces this shape, but the route must not depend on
+     the UI being the thing that called it. */
+  const cleanDate = (v: unknown) => {
+    const d = clean(v, 10);
+    return /^\d{4}-\d{2}-\d{2}$/.test(d) && !Number.isNaN(Date.parse(`${d}T00:00:00Z`))
+      ? d
+      : '';
+  };
 
   /**
    * Remove a photograph's file, but only once nothing points at it.
@@ -68,10 +82,10 @@ export async function POST(request: Request) {
   switch (body.action) {
     case 'add-update': {
       const title = clean(body.update?.title, 120);
-      const date = clean(body.update?.date, 10);
+      const date = cleanDate(body.update?.date);
       const text = clean(body.update?.body, 2000);
       if (!title || !date) {
-        return NextResponse.json({ error: 'title_and_date_required' }, { status: 400 });
+        return NextResponse.json({ error: 'title_and_valid_date_required' }, { status: 400 });
       }
       content.updates = [
         {
@@ -95,9 +109,9 @@ export async function POST(request: Request) {
 
     case 'add-event': {
       const title = clean(body.event?.title, 120);
-      const date = clean(body.event?.date, 10);
+      const date = cleanDate(body.event?.date);
       if (!title || !date) {
-        return NextResponse.json({ error: 'title_and_date_required' }, { status: 400 });
+        return NextResponse.json({ error: 'title_and_valid_date_required' }, { status: 400 });
       }
       content.events = [
         ...content.events,
@@ -123,14 +137,38 @@ export async function POST(request: Request) {
 
     case 'delete-image': {
       const image = content.gallery.find((g) => g.id === body.id);
-      if (image) await deleteImageFile(image.pathname);
+      /* Built-in frames ship with the site and have no file of their own; the
+         admin hides the button, but the route must refuse it too. */
+      if (image && !image.pathname) {
+        return NextResponse.json({ error: 'built_in_image' }, { status: 400 });
+      }
       content.gallery = content.gallery.filter((g) => g.id !== body.id);
+      /* Through the reference count, like the other two deletes: an update or
+         an event may point at the very same picture. Deleting the file
+         unconditionally here was leaving a broken image on the public page —
+         the exact failure the helper exists to prevent. */
+      await dropFileIfUnused(image?.url);
       break;
     }
 
-    case 'set-contact':
-      content.contact = { ...content.contact, ...body.contact };
+    case 'set-contact': {
+      /* The only write path that used to spread its input straight into the
+         document: no allowlist, no length, no type check. A number stored here
+         reaches isSupplied(), which calls .trim() on it, and every page render
+         throws. */
+      const incoming = (body.contact ?? {}) as Record<string, unknown>;
+      const next = { ...content.contact };
+      for (const key of ['email', 'phone', 'press', 'whatsapp'] as const) {
+        if (!(key in incoming)) continue;
+        /* Ignore a value that is not a string rather than clearing the field.
+           Coercing it to '' would let a malformed request wipe the office's
+           telephone number, which is worse than refusing the change. */
+        if (typeof incoming[key] !== 'string') continue;
+        next[key] = clean(incoming[key], 120);
+      }
+      content.contact = next;
       break;
+    }
 
     default:
       return NextResponse.json({ error: 'unknown_action' }, { status: 400 });

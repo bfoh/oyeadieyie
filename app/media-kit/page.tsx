@@ -7,7 +7,8 @@ import {
   Check,
   FilmSlate,
 } from '@phosphor-icons/react/dist/ssr';
-import { CHIEF, COMPANY, CONTACT, FILM, contactValue } from '@/lib/content';
+import { CHIEF, COMPANY, CONTACT, FILM, isSupplied } from '@/lib/content';
+import { readContent } from '@/lib/store';
 import {
   KIT,
   ADDRESS,
@@ -33,9 +34,16 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-export default function MediaKit() {
+/* Contact details are editable in the admin, so they have to be read at
+   request time. These pages used the build-time constants, which meant the
+   office could set the press desk address and this page would keep showing
+   nothing until someone redeployed. */
+export const revalidate = 30;
+
+export default async function MediaKit() {
+  const { contact } = await readContent();
   /* Null until the palace supplies it, so no bracketed token is published. */
-  const press = contactValue('press');
+  const press = isSupplied(contact.press) ? contact.press : null;
 
   return (
     <LensProvider>

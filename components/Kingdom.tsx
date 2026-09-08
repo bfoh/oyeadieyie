@@ -91,7 +91,11 @@ export function Kingdom({ gallery }: { gallery: { id: string; url: string; alt: 
           </Reveal>
         </div>
 
-        {/* Gallery */}
+        {/* Gallery. The heading is inside the guard: an empty gallery used to
+            leave "The court in session" standing over nothing, where Updates
+            and Events both render nothing at all when they have nothing. */}
+        {gallery.length > 0 && (
+          <>
         <Reveal delay={80}>
           <h3 className="mt-800 font-display text-2xl font-600 text-ivory">
             The court in session
@@ -113,6 +117,8 @@ export function Kingdom({ gallery }: { gallery: { id: string; url: string; alt: 
             </Reveal>
           ))}
         </ul>
+          </>
+        )}
       </div>
     </section>
   );

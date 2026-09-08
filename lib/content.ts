@@ -763,8 +763,24 @@ export const UPDATES: Update[] = [];
 export const UPDATES_INTRO =
   'Work as it happens, dated and photographed, so the record can be checked rather than taken on trust.';
 
-export function formatUpdateDate(iso: string): string {
+/** A date the office typed, or null if it is not one. */
+export function parseISODate(iso: string | undefined): Date | null {
+  if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
   const d = new Date(`${iso}T00:00:00Z`);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/**
+ * Never throws.
+ *
+ * `Intl.DateTimeFormat().format()` raises RangeError on an invalid date, and
+ * this runs inside a server component on the public home page — so one bad
+ * date reaching the store took the whole site down. It now prints whatever it
+ * was given rather than bringing the page with it.
+ */
+export function formatUpdateDate(iso: string): string {
+  const d = parseISODate(iso);
+  if (!d) return iso ?? '';
   return new Intl.DateTimeFormat('en-GB', {
     day: 'numeric',
     month: 'long',

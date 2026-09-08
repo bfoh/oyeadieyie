@@ -1,4 +1,5 @@
-import { UPDATES, PROJECTS, contactValue } from '@/lib/content';
+import { PROJECTS, isSupplied } from '@/lib/content';
+import { readContent } from '@/lib/store';
 
 /**
  * What the office still owes the site.
@@ -14,33 +15,37 @@ type Item = {
   needed: string;
 };
 
-export default function ChecklistPage() {
+export const dynamic = 'force-dynamic';
+
+export default async function ChecklistPage() {
+  const content = await readContent({ fresh: true });
   const illustrated = PROJECTS.filter((p) => p.provenance === 'illustration');
+  const supplied = (k: keyof typeof content.contact) => isSupplied(content.contact[k]);
 
   const items: Item[] = [
     {
       title: 'Office email address',
-      done: Boolean(contactValue('email')),
+      done: supplied('email'),
       today: 'Every email line is omitted from the footer, the form and the press kit.',
-      needed: 'Set CONTACT.email in lib/content.ts.',
+      needed: 'Manage the site → Contact details.',
     },
     {
       title: 'Office telephone',
-      done: Boolean(contactValue('phone')),
+      done: supplied('phone'),
       today: 'No phone number appears anywhere on the site.',
-      needed: 'Set CONTACT.phone in lib/content.ts.',
+      needed: 'Manage the site → Contact details.',
     },
     {
       title: 'Press desk address',
-      done: Boolean(contactValue('press')),
+      done: supplied('press'),
       today: 'The press panel shows no desk address for newsrooms.',
-      needed: 'Set CONTACT.press in lib/content.ts.',
+      needed: 'Manage the site → Contact details.',
     },
     {
       title: 'WhatsApp number',
-      done: Boolean(contactValue('whatsapp')),
+      done: supplied('whatsapp'),
       today: 'The WhatsApp route beside the form is hidden entirely.',
-      needed: 'Set CONTACT.whatsapp as 233XXXXXXXXX in lib/content.ts.',
+      needed: 'Manage the site → Contact details. Enter it as 233XXXXXXXXX, not 0XXXXXXXXX.',
     },
     {
       title: 'Engagement inbox',
@@ -65,9 +70,9 @@ export default function ChecklistPage() {
     },
     {
       title: 'First dated update',
-      done: UPDATES.length > 0,
+      done: content.updates.length > 0,
       today: 'The updates section renders nothing at all, so the site shows no activity since launch.',
-      needed: 'Add an entry to UPDATES in lib/content.ts: a date, a paragraph, a photograph.',
+      needed: 'Manage the site → Updates: a date, a paragraph, a photograph.',
     },
     {
       title: 'Legal pages reviewed by counsel',

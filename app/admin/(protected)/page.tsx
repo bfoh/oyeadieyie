@@ -1,43 +1,66 @@
 import Link from 'next/link';
-import {
-  PROJECTS,
-  UPDATES,
-  ADINKRA,
-  FAQ,
-  GALLERY,
-  CHIEF,
-  contactValue,
-} from '@/lib/content';
+import { PROJECTS, ADINKRA, FAQ, CHIEF, isSupplied } from '@/lib/content';
 import { PHOTO_SETS } from '@/lib/presskit';
 import { BRAND_ASSETS } from '@/lib/brandAssets';
+import { readContent } from '@/lib/store';
 
 /**
- * What the office actually needs to see on opening the admin: the size of the
- * public record, and the things that are still missing from it. Every figure
- * is counted from the content itself, so it cannot drift.
+ * What the office needs to see on opening the admin.
+ *
+ * Every figure that the office can change is counted from the STORE, not from
+ * the constants compiled into the build. Reading the constants here was the
+ * most misleading thing in this admin: the office could post ten updates,
+ * upload twenty photographs and fill in every contact field, and this page
+ * would still report none of it, then send them to a checklist telling them to
+ * edit source code for work they had already done.
+ *
+ * Only what the office cannot change from here — the adinkra, the FAQ, the
+ * brand assets, the cleared press photography — still comes from the build.
  */
-export default function AdminDashboard() {
+export const dynamic = 'force-dynamic';
+
+export default async function AdminDashboard() {
+  const content = await readContent({ fresh: true });
+
   const photos = PHOTO_SETS.reduce((n, s) => n + s.shots.length, 0);
   const delivered = PROJECTS.filter((p) => p.status === 'Delivered').length;
   const illustrated = PROJECTS.filter((p) => p.provenance === 'illustration').length;
+  const supplied = (k: keyof typeof content.contact) => isSupplied(content.contact[k]);
 
   const missing = [
-    !contactValue('email') && 'Office email',
-    !contactValue('phone') && 'Office telephone',
-    !contactValue('press') && 'Press desk address',
-    !contactValue('whatsapp') && 'WhatsApp number',
-    UPDATES.length === 0 && 'First dated update',
+    !supplied('email') && 'Office email',
+    !supplied('phone') && 'Office telephone',
+    !supplied('press') && 'Press desk address',
+    !supplied('whatsapp') && 'WhatsApp number',
+    content.updates.length === 0 && 'First dated update',
     illustrated > 0 && `${illustrated} project photographs`,
   ].filter(Boolean) as string[];
 
+  const upcoming = content.events.filter(
+    (e) => e.date >= new Date().toISOString().slice(0, 10),
+  ).length;
+
   const stats = [
     { label: 'Projects on the agenda', value: PROJECTS.length, note: `${delivered} delivered` },
+    {
+      label: 'Dated updates',
+      value: content.updates.length,
+      note: content.updates.length ? 'Published' : 'None yet',
+    },
+    {
+      label: 'Events ahead',
+      value: upcoming,
+      note: content.events.length ? `${content.events.length} in the calendar` : 'None yet',
+    },
+    {
+      label: 'Gallery frames',
+      value: content.gallery.length,
+      note: 'The court in session',
+    },
     { label: 'Brand assets', value: BRAND_ASSETS.length, note: 'Ready to issue' },
     { label: 'Cleared photographs', value: photos, note: 'In the press kit' },
-    { label: 'Dated updates', value: UPDATES.length, note: UPDATES.length ? 'Published' : 'None yet' },
     { label: 'Adinkra published', value: ADINKRA.length, note: 'With their proverbs' },
     { label: 'Questions answered', value: FAQ.length, note: 'On the public FAQ' },
-    { label: 'Gallery frames', value: GALLERY.length, note: 'The court in session' },
   ];
 
   return (
@@ -50,7 +73,7 @@ export default function AdminDashboard() {
           The office at a glance
         </h1>
         <p className="mt-200 max-w-measure text-base leading-relaxed text-ivory/65">
-          Everything counted from the published record, so these numbers and the
+          Counted from the site as it stands right now, so these numbers and the
           public page can never disagree.
         </p>
       </header>
