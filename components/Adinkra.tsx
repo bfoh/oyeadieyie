@@ -1,10 +1,26 @@
 'use client';
 
+import { useState } from 'react';
 import { ADINKRA } from '@/lib/content';
 import { GLYPHS } from './adinkraGlyphs';
 import { Reveal } from './Reveal';
 
+/**
+ * The proverbs behind the symbols.
+ *
+ * These were previously revealed by `group-hover` and `group-focus-visible`
+ * alone. A touch device has no hover, and tapping a button sets `:focus` but
+ * not `:focus-visible`, so on a phone the gloss stayed at `max-height: 0` and
+ * ten Akan proverbs, the most culturally substantial content on the site,
+ * were unreachable. Traffic here is overwhelmingly mobile.
+ *
+ * So the card is now a real disclosure: it opens on click, reports its state
+ * with `aria-expanded`, and hover remains as an enhancement on pointer
+ * devices only.
+ */
 export function Adinkra() {
+  const [open, setOpen] = useState<string | null>(null);
+
   return (
     <section
       aria-labelledby="adinkra-heading"
@@ -27,26 +43,37 @@ export function Adinkra() {
           </h2>
           <p data-choreo-lead className="mt-200 max-w-measure text-base leading-relaxed text-ivory/70">
             Akan adinkra carry proverbs. The regalia worn at the durbar is not
-            decoration, it is a sentence. Hover or focus a symbol to read it.
+            decoration, it is a sentence. Choose a symbol to read it.
           </p>
         </Reveal>
 
         <ul data-reveal-group className="mt-600 grid grid-cols-2 gap-200 sm:grid-cols-3 lg:grid-cols-5">
           {ADINKRA.map((sym, i) => {
             const g = GLYPHS[sym.id];
+            const isOpen = open === sym.id;
             return (
               <Reveal as="li" item key={sym.id} delay={i * 50}>
                 <button
                   type="button"
-                  className="group flex h-full w-full flex-col rounded-2xl border border-ebony-line bg-ebony-raised/80 p-200 text-left backdrop-blur-sm transition-all duration-700 ease-fluid hover:-translate-y-[3px] hover:border-gold hover:bg-ebony-card active:scale-[0.98]"
-                  aria-describedby={`gloss-${sym.id}`}
+                  onClick={() => setOpen(isOpen ? null : sym.id)}
+                  aria-expanded={isOpen}
+                  aria-controls={`gloss-${sym.id}`}
+                  className={[
+                    'group flex h-full w-full flex-col rounded-2xl border bg-ebony-raised/80 p-200 text-left backdrop-blur-sm transition-all duration-700 ease-fluid hover:-translate-y-[3px] hover:border-gold hover:bg-ebony-card active:scale-[0.98]',
+                    isOpen
+                      ? 'border-gold bg-ebony-card'
+                      : 'border-ebony-line',
+                  ].join(' ')}
                 >
                   <span className="flex h-[64px] items-center">
                     {g && (
                       <svg
                         viewBox={g.viewBox}
                         aria-hidden="true"
-                        className="h-[56px] w-[56px] text-gold transition-transform duration-[900ms] ease-fluid group-hover:scale-110 group-focus-visible:scale-110"
+                        className={[
+                          'h-[56px] w-[56px] text-gold transition-transform duration-[900ms] ease-fluid group-hover:scale-110',
+                          isOpen ? 'scale-110' : '',
+                        ].join(' ')}
                       >
                         {g.el}
                       </svg>
@@ -58,12 +85,23 @@ export function Adinkra() {
                   <p className="mt-25 text-sm leading-snug text-gold/80">
                     {sym.meaning}
                   </p>
-                  <p
+                  {/* Grid rows animate a height the content decides, so the
+                      gloss is never clipped whatever its length. */}
+                  <span
                     id={`gloss-${sym.id}`}
-                    className="mt-0 max-h-0 overflow-hidden text-sm leading-relaxed text-ivory/55 opacity-0 transition-all duration-[900ms] ease-fluid group-hover:mt-100 group-hover:max-h-[200px] group-hover:opacity-100 group-focus-visible:mt-100 group-focus-visible:max-h-[200px] group-focus-visible:opacity-100"
+                    className={[
+                      'grid overflow-hidden transition-all duration-[900ms] ease-fluid',
+                      isOpen
+                        ? 'mt-100 grid-rows-[1fr] opacity-100'
+                        : 'mt-0 grid-rows-[0fr] opacity-0',
+                    ].join(' ')}
                   >
-                    {sym.gloss}
-                  </p>
+                    <span className="min-h-0">
+                      <span className="block text-sm leading-relaxed text-ivory/60">
+                        {sym.gloss}
+                      </span>
+                    </span>
+                  </span>
                 </button>
               </Reveal>
             );

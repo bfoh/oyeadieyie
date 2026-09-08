@@ -27,7 +27,10 @@ export function Hero() {
     const v = videoRef.current;
     if (!v || !src) return;
 
-    v.load();
+    /* No v.load() here. React mounts the <source> as soon as `src` resolves
+       and the browser begins fetching immediately; calling load() restarted
+       that fetch, and the network log showed the file downloaded twice —
+       2.0 MB of mobile data for a 1.05 MB clip. */
 
     let cancelled = false;
     const attempt = () => {
@@ -66,13 +69,20 @@ export function Hero() {
       data-parallax-section
       className="relative min-h-[100svh] w-full overflow-hidden"
     >
-      {/* Full bleed footage. Poster paints immediately, video fades over it. */}
-      <div className="absolute inset-0" data-parallax="0.12">
+      {/* Full bleed footage.
+          The still is painted by CSS on this wrapper, chosen by media query.
+          Orientation is only known after mount, so a server-rendered poster
+          attribute meant the phone fetched the landscape still and then the
+          portrait one as well: 210 KB where 113 KB was needed. A <picture>
+          was tried instead and was worse, because Chromium's preload scanner
+          fetches the <img src> fallback alongside the matching <source>.
+          One media query, one file, painted before any JavaScript runs. */}
+      <div className="absolute inset-0 hero-still" data-parallax="0.12">
         <video
           ref={videoRef}
           /* The subject sits high in frame in both cuts, so the crop is
              anchored above centre. Dead centre decapitates him. */
-          className="h-full w-full object-cover"
+          className="relative h-full w-full object-cover"
           /* Both cuts are now framed at their real aspect, so the crop only
              needs a nudge upward rather than a rescue. */
           style={{ objectPosition: portrait ? '52% 18%' : '50% 38%' }}
@@ -81,8 +91,17 @@ export function Hero() {
           loop
           playsInline
           preload={src ? 'auto' : 'none'}
+          /* Set only once orientation is known, and always to the file the
+             CSS above has already fetched, so this costs no extra request
+             and gives the video element something to paint immediately. */
+          poster={
+            src
+              ? portrait
+                ? '/img/hero-poster-mobile.jpg'
+                : '/img/hero-poster.jpg'
+              : undefined
+          }
           disablePictureInPicture
-          poster={portrait ? '/img/hero-poster-mobile.jpg' : '/img/hero-poster.jpg'}
           aria-label="Nana Oyeadieyie Barima Essoun I walking in adinkra regalia beneath the royal umbrella"
         >
           {src && <source src={src} type="video/mp4" />}

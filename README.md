@@ -18,16 +18,47 @@ components.
 ## What still needs real information
 
 These are deliberately bracketed. Nothing was invented, because false claims on
-an official chief's site are worse than blanks.
+an official chief's site are worse than blanks. **Nothing bracketed is ever
+printed**: every read goes through `contactValue()` in `lib/content.ts`, which
+returns null for an unsupplied value, and the line, link or whole panel is
+omitted instead.
 
 | Where | Placeholder | Needs |
 |---|---|---|
 | `CONTACT.email` | `[OFFICIAL EMAIL]` | Palace email address |
 | `CONTACT.phone` | `[OFFICIAL PHONE]` | Palace telephone |
 | `CONTACT.press` | `[PRESS EMAIL]` | Press desk address |
-| `app/layout.tsx` | `SITE` | The real domain, for canonical and Open Graph URLs |
-| `components/Engage.tsx` | `onSubmit` | The form validates and shows success but posts nowhere. Point it at the palace inbox or a form service and delete the `setTimeout`. |
-| `app/privacy`, `app/terms` | Draft text | Have counsel review before launch |
+| `CONTACT.whatsapp` | `[WHATSAPP NUMBER]` | International format, `233XXXXXXXXX`. Supplying it makes the WhatsApp route appear beside the form and in the footer. |
+| `lib/site.ts` | `SITE` | The real domain, for canonical, sitemap and Open Graph URLs. Override with `NEXT_PUBLIC_SITE_URL`. |
+| `IMPACT` | investment, reach, communities | Figures the traditional council can produce if a journalist asks |
+
+### The engagement form
+
+`components/Engage.tsx` posts to `app/api/engage/route.ts`, which sends through
+Resend. Two environment variables turn it on:
+
+```
+RESEND_API_KEY=...
+ENGAGE_TO=office@example.com
+ENGAGE_FROM="Adrobaa site <site@yourdomain>"   # optional
+```
+
+Until both are set the route answers `503 not_configured` and the form shows
+**"That message did not send"** with the direct routes instead. It never
+reports a success it cannot back up. The previous version waited 900 ms and
+claimed the message had reached the office while sending nothing at all; every
+enquiry made in that period was lost, and the sender had no way to know.
+
+A honeypot field named `website` is submitted with the form. Anything that
+fills it is answered with a success it does not receive.
+
+### Legal pages
+
+`app/privacy` and `app/terms` no longer tell readers they are unreviewed
+drafts; that note lives in a comment at the top of each file, where it belongs.
+Both still need counsel, particularly against Ghana's Data Protection Act,
+2012 (Act 843), now that the form actually collects and transmits names,
+addresses and organisations.
 
 ## Content from the chief
 
@@ -47,28 +78,36 @@ Committed. Ask him which are actually complete.
 
 ### Project imagery
 
-Five cards carry real photographs from `pics/` and `videos/`. Three had no
-photograph anywhere in the source material and carry generated illustrations
-instead, each marked **Illustration** on the card and flagged
-`illustration: true` in `lib/content.ts`:
+**No generated images ship any more.** The three cards that carried them —
+street lights, scholarships, tree planting — now fall back to an adinkra, the
+state the component already had for cards with no photograph. On the official
+site of a sitting chief, a generated picture of a Ghanaian classroom beside
+real documentary photography is the detail a hostile reporter leads with, and
+the on-card label does not travel with a screenshot. The generator script is
+kept but its output is no longer referenced; replace those cards with real
+photographs when the palace has them.
 
 | Card | Image |
 |---|---|
-| Public toilets | render, real |
-| Clean drinking water | borehole crew, frame from `IMG_3209.MP4` |
+| Public toilets | render, labelled `Render`, plus a four-frame progress sequence |
+| Clean drinking water | borehole crew, plus a three-frame sequence |
 | Clean community | women receiving brooms, `IMG_9930` |
 | Street and ring roads | sod cutting, `IMG_9721` |
 | Youth skills | young people of Adrobaa, `IMG_9926` |
-| Street lights | generated illustration |
-| Scholarships | generated illustration |
-| Green nature | generated illustration |
+| Street lights, Scholarships, Green nature | adinkra, no photograph exists |
 
-The illustrations show objects and places only, never people: a picture of a
-person on a development record implies a real beneficiary, and these are not
-photographs of anyone. Regenerate them with
-`./scripts/generate-project-illustrations.sh` (needs `OPENROUTER_API_KEY` in
-`.env`). **Replace them with real photographs as soon as the palace has any** —
-then delete the `illustration: true` flag so the label disappears.
+`provenance: 'photo' | 'render' | 'illustration'` on a project drives the badge
+on the card, so the page and the press kit can no longer disagree about whether
+a reader is looking at a building or a drawing of one.
+
+### Renders become buildings
+
+`components/ProjectProgress.tsx` renders the `progress` sequences declared in
+`lib/content.ts`: render → foundation trenches → footprint → blockwork for the
+sanitation block, and rig → casing → first water for the boreholes. Every one
+of these photographs was already in `public/img`, referenced by nothing, while
+the section headline promised exactly this sequence. Captions describe only
+what is visible in the frame.
 
 A card with no `image` at all falls back to an adinkra, which is still a
 deliberate state rather than a blank.
@@ -93,10 +132,15 @@ profanity on the cover.
 
 ## The impact figures
 
-`IMPACT` in `lib/content.ts` now carries GHC 5m invested, 50,000 residents
-reached, 10 projects delivered and 5 communities served, as supplied. These are
-public claims on an official site, so they should be traceable to something the
-traditional council can produce if a journalist asks.
+The projects tile previously read **10 projects delivered** while the record
+printed directly beneath it listed one delivered item. It is now derived from
+`PROJECTS.length` and labelled **Projects on the agenda**, so changing the
+record changes the number and the two can never contradict each other again.
+
+Every stat carries an `attribution` of `counted` or `stated`, and
+`IMPACT_SOURCE` prints under the grid saying which is which. Investment, reach
+and community figures remain the office's own; they should be traceable to
+something the traditional council can produce if a journalist asks.
 
 ## Media pipeline
 
@@ -126,10 +170,13 @@ The enstoolment film in `components/FilmFeature.tsx` is click to play with
 cleared photography grouped by regalia / business / development with per image
 download, forms of address, the DeoMetals summary and terms of use.
 
-The downloadable pack is a real file at `public/press/adrobaa-press-kit.zip`,
-built by hand from `public/img` plus a README carrying the biographies and
-protocol notes. **Rebuild it whenever the photography or the biography
-changes**, otherwise the zip and the page drift apart.
+The downloadable pack at `public/press/adrobaa-press-kit.zip` is built by
+`node scripts/build-press-kit.mjs`, which reads `PHOTO_SETS` in
+`lib/presskit.ts` — the same source the page renders from — so the pack and the
+page cannot list different photographs. It writes a README carrying the
+biographies, forms of address, terms and a captioned manifest, then prints the
+size and count to paste back into `KIT`. Run it whenever the photography or the
+biography changes. It fails loudly if a listed photograph is missing.
 
 The lens toggle is hidden off the home page, because nothing on a sub page
 responds to it and a control that does nothing reads as broken.
@@ -238,3 +285,56 @@ Defined in `tailwind.config.ts` and `app/globals.css`.
 - One easing curve everywhere: `ease-fluid`, `cubic-bezier(0.32,0.72,0,1)`
 - Scroll reveals use `IntersectionObserver` only, never a scroll listener
 - `prefers-reduced-motion` disables transitions and shows all text immediately
+
+## Accessibility decisions worth keeping
+
+- **The adinkra glosses are a disclosure, not a hover effect.** They were
+  revealed by `group-hover` and `group-focus-visible` alone. A touch device has
+  no hover, and tapping a button sets `:focus` but not `:focus-visible`, so on
+  a phone all ten proverbs were unreachable. They now open on click with
+  `aria-expanded`. Do not "simplify" this back to hover.
+- **The mobile menu is modal.** Focus moves in, is trapped, and returns to the
+  hamburger on close; Lenis is stopped through the `nav:lock` / `nav:unlock`
+  events rather than by reaching into the motion system. The overlay unmounts
+  700 ms after closing so the fade-out has something to animate — the `hidden`
+  attribute used to land immediately and the transition never played.
+- **`section[id] { scroll-margin-top: 96px }`.** Lenis applies a −96 px anchor
+  offset, but only for clicks it handles. Shared links, back-forward restores
+  and every reader with reduced motion land behind the fixed nav pill without
+  this rule.
+- **`text-ivory/40` is 3.67:1 on the ebony ground and fails AA.** Small text
+  uses `/50` (5.08:1). `gold-dim` is 4.17:1: borders and hover states only,
+  never text.
+- **The profile toggle is buttons with `aria-pressed`, not tabs.** It carried
+  `role="tab"` without arrow-key navigation or a roving tabindex, which
+  promises behaviour the page does not have. The panel is `aria-live="polite"`
+  because the lens rewrites it silently.
+
+## Performance decisions worth keeping
+
+- **Never call `video.load()` after setting `<source>` declaratively.** React
+  mounts the source and the browser starts fetching; `load()` restarts it. The
+  network log showed the hero downloaded twice, 2.0 MB for a 1.05 MB clip.
+- **The hero still is a CSS background chosen by media query**, not a `poster`
+  attribute and not a `<picture>`. A `poster` cannot be right in server-rendered
+  HTML because orientation is unknown, so phones fetched the landscape still
+  and then the portrait one. A `<picture>` was tried and was worse: Chromium's
+  preload scanner fetches the `<img src>` fallback alongside the matching
+  `<source>`. `<link rel="preload" media="...">` was also tried and fetched
+  both files regardless of its media attribute. One media query, one file.
+  The video then adopts that same, already-cached file as its `poster` once
+  `src` resolves, which costs no request and gives the video an early paint.
+- **`has-motion` has a 1200 ms failsafe.** The class hides pre-reveal content,
+  which meant the chief's name could not paint until the GSAP and Lenis bundles
+  had downloaded and run. A slow bundle should cost the entrance, not the
+  words. If the failsafe has fired, the class is not re-added.
+- **Static media carries immutable cache headers** (`next.config.mjs`). Change
+  the filename when the media changes.
+
+## Updates
+
+`UPDATES` in `lib/content.ts` is empty and `components/Updates.tsx` renders
+nothing while it is. Add entries newest first with an ISO `date`; the section
+shows the three most recent. Nothing else on the site carries a date, so this
+is the only place the record can accumulate — and it is what would make the
+impact figures above citable rather than asserted.

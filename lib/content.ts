@@ -229,6 +229,34 @@ export const PILLARS: {
    Projects
 --------------------------------------------------------------- */
 export type ProjectStatus = 'Delivered' | 'Ongoing' | 'In construction' | 'Committed';
+
+/**
+ * What an image on this page actually is.
+ *
+ * `photo`        a photograph of the real work
+ * `render`       an architect's visualisation of work not yet built
+ * `illustration` a generated picture, standing in where no photograph exists
+ *
+ * The badge on every card is derived from this, so the page and the press kit
+ * can never drift apart about what a reader is looking at. Only `photo` goes
+ * unbadged, because only a photograph needs no qualification.
+ */
+export type Provenance = 'photo' | 'render' | 'illustration';
+
+export const PROVENANCE_LABEL: Record<Provenance, string | null> = {
+  photo: null,
+  render: 'Render',
+  illustration: 'Illustration',
+};
+
+/** One frame in a project's progress sequence. */
+export type ProgressFrame = {
+  src: string;
+  alt: string;
+  /* What the frame shows, in the fewest words that are still true. */
+  caption: string;
+  provenance: Provenance;
+};
 export type ProjectTag =
   | 'Sanitation'
   | 'Water'
@@ -265,10 +293,10 @@ export const PROJECTS: {
   alt?: string;
   glyph?: string;
   figure?: string;
-  /* True when the image is a generated illustration rather than a photograph
-     of the work. It is labelled on the card so nothing on this page can be
-     mistaken for documentary evidence. */
-  illustration?: boolean;
+  /* What the card image is. Absent means a photograph. */
+  provenance?: Provenance;
+  /* The work in sequence, where the photography exists to show it. */
+  progress?: ProgressFrame[];
 }[] = [
   {
     id: 'toilets',
@@ -280,6 +308,33 @@ export const PROJECTS: {
     body: 'Public sanitation blocks of twenty seaters, sited around the communities. Taken from architectural render to poured foundation and blockwork on site.',
     image: '/img/project-sanitation-render.jpg',
     alt: 'Architectural render of a public sanitation block for Adrobaa at dusk',
+    provenance: 'render',
+    progress: [
+      {
+        src: '/img/project-sanitation-render2.jpg',
+        alt: 'Architectural render of the sanitation block, front elevation, signed PUBLIC TOILET with separate male and female entrances',
+        caption: 'The design, as drawn',
+        provenance: 'render',
+      },
+      {
+        src: '/img/project-foundation.jpg',
+        alt: 'A workman standing beside freshly poured concrete foundation trenches in red earth',
+        caption: 'Foundation trenches poured',
+        provenance: 'photo',
+      },
+      {
+        src: '/img/project-construction.jpg',
+        alt: 'The completed foundation footprint of the block, its rooms laid out in concrete at ground level',
+        caption: 'The footprint, room by room',
+        provenance: 'photo',
+      },
+      {
+        src: '/img/project-blockwork.jpg',
+        alt: 'Site crew mixing concrete beside stacked blocks as the walls begin to rise',
+        caption: 'Blockwork under way',
+        provenance: 'photo',
+      },
+    ],
   },
   {
     id: 'water',
@@ -290,6 +345,26 @@ export const PROJECTS: {
     body: 'Mechanised boreholes drilled in the communities. The rig, the casing and the first water are all on record, so the town can see the work rather than hear about it.',
     image: '/img/project-borehole-crew.jpg',
     alt: 'Drilling crew working the borehole rig in the community',
+    progress: [
+      {
+        src: '/img/project-borehole-rig.jpg',
+        alt: 'The drilling rig raised on site beside its supply truck, crew standing by',
+        caption: 'The rig on site',
+        provenance: 'photo',
+      },
+      {
+        src: '/img/project-borehole-casing.jpg',
+        alt: 'Casing pipes stacked in the back of the delivery truck at the community',
+        caption: 'Casing delivered',
+        provenance: 'photo',
+      },
+      {
+        src: '/img/project-borehole-water.jpg',
+        alt: 'Water running from the drill head into the pit at the moment the borehole is struck',
+        caption: 'First water',
+        provenance: 'photo',
+      },
+    ],
   },
   {
     id: 'dustbins',
@@ -319,9 +394,9 @@ export const PROJECTS: {
     tag: 'Infrastructure',
     status: 'Committed',
     body: 'Lighting along the community roads, so that the evening does not end movement, trade or safety in the town.',
-    image: '/img/project-streetlights.jpg',
-    alt: 'A solar street lamp beside a laterite road at dusk',
-    illustration: true,
+    /* No photograph of this work exists yet, so the card carries an adinkra.
+       Nkyinkyim, the twisting path, for the roads it will light. */
+    glyph: 'nkyinkyim',
   },
   {
     id: 'scholarships',
@@ -330,9 +405,8 @@ export const PROJECTS: {
     tag: 'Education',
     status: 'Ongoing',
     body: 'Support for pupils whose ability outruns their means, so that a place at school is settled by the student and not by the household budget.',
-    image: '/img/project-scholarships.jpg',
-    alt: 'Senior high school students in uniform outside their classroom block, laughing together',
-    illustration: true,
+    /* Nea Onnim No Sua A, Ohu: he who does not know can know from learning. */
+    glyph: 'neaonnim',
   },
   {
     id: 'skills',
@@ -352,14 +426,23 @@ export const PROJECTS: {
     tag: 'Environment',
     status: 'Ongoing',
     body: 'Tree planting across the communities, put in now for shade, soil and air that the town will use long after the planting is forgotten.',
-    image: '/img/project-trees.jpg',
-    alt: 'Rows of tree seedlings in nursery bags on red earth, ready for planting',
-    illustration: true,
+    /* Akoma Ntoso, linked hearts: planting the town will only feel later. */
+    glyph: 'akomantoso',
   },
 ];
 
-/* Impact counter. Values intentionally bracketed until the palace supplies
-   audited figures. Nothing false ships on an official site. */
+/**
+ * The impact counter.
+ *
+ * `attribution` says where a number comes from, and the section prints that
+ * under the grid. `counted` figures are derived from the record on this page,
+ * so they can never contradict the cards below them; `stated` figures are the
+ * office's own, published as such rather than dressed up as audited.
+ *
+ * The projects tile previously read "10 projects delivered" while the record
+ * below listed one delivered item. Deriving it from PROJECTS is what stops
+ * that happening again: change the record, and the number follows.
+ */
 export const IMPACT: {
   id: string;
   value: number;
@@ -367,6 +450,7 @@ export const IMPACT: {
   suffix?: string;
   label: string;
   note: string;
+  attribution: 'counted' | 'stated';
 }[] = [
   {
     id: 'invested',
@@ -375,26 +459,35 @@ export const IMPACT: {
     suffix: 'm',
     label: 'Invested to date',
     note: 'Across delivered and committed projects',
+    attribution: 'stated',
   },
   {
     id: 'lives',
     value: 50000,
     label: 'Residents reached',
     note: 'Adrobaa and surrounding communities',
+    attribution: 'stated',
   },
   {
     id: 'projects',
-    value: 10,
-    label: 'Projects delivered',
-    note: 'Completed and handed to the town',
+    value: PROJECTS.length,
+    label: 'Projects on the agenda',
+    note: 'Delivered, under way and committed',
+    attribution: 'counted',
   },
   {
     id: 'communities',
     value: 5,
     label: 'Communities served',
     note: 'Within Tano North Municipal',
+    attribution: 'stated',
   },
 ];
+
+/* Printed under the counter, so a reader always knows which numbers the page
+   can prove and which the office has asserted. */
+export const IMPACT_SOURCE =
+  'Project count is taken from the record below. Investment, reach and community figures are as stated by the office of the Nkosuo Hene and are confirmed with the traditional council on request.';
 
 /* ---------------------------------------------------------------
    Adinkra
@@ -585,12 +678,98 @@ export const ENGAGE_ROUTES = [
   },
 ];
 
+/**
+ * Contact details for the office.
+ *
+ * A value left in brackets is not yet supplied by the palace. Nothing reads
+ * these fields directly: everything goes through `contactValue()` below, which
+ * returns null for an unsupplied value so the line is omitted rather than
+ * printed. A missing contact line reads as reserve. A bracketed token reads as
+ * an unfinished website, and this one is live.
+ *
+ * `whatsapp` is the number in international format with no punctuation, as
+ * wa.me requires: 233XXXXXXXXX. Fill it and the WhatsApp route appears on its
+ * own; leave it and nothing about the page suggests one exists.
+ */
 export const CONTACT = {
   office: 'Office of the Nkosuo Hene, Adrobaa, Tano North Municipal, Ahafo Region, Ghana',
   email: '[OFFICIAL EMAIL]',
   phone: '[OFFICIAL PHONE]',
   press: '[PRESS EMAIL]',
+  whatsapp: '[WHATSAPP NUMBER]',
 };
+
+/** A bracketed value is a blank waiting on the palace, not a value. */
+export function isSupplied(value: string | undefined): boolean {
+  return Boolean(value) && !/^\[.*\]$/.test(value!.trim());
+}
+
+/** The value if the palace has supplied it, otherwise null. */
+export function contactValue(
+  key: keyof typeof CONTACT,
+): string | null {
+  const v = CONTACT[key];
+  return isSupplied(v) ? v : null;
+}
+
+/** Digits only, as wa.me expects. Null until the number is supplied. */
+export function whatsappHref(message?: string): string | null {
+  const n = contactValue('whatsapp');
+  if (!n) return null;
+  const digits = n.replace(/\D/g, '');
+  if (!digits) return null;
+  return message
+    ? `https://wa.me/${digits}?text=${encodeURIComponent(message)}`
+    : `https://wa.me/${digits}`;
+}
+
+/** Null until the number is supplied, so the link is never rendered empty. */
+export function telHref(): string | null {
+  const n = contactValue('phone');
+  return n ? `tel:${n.replace(/[^\d+]/g, '')}` : null;
+}
+
+/* ---------------------------------------------------------------
+   Updates
+--------------------------------------------------------------- */
+
+/**
+ * Dated entries from the office.
+ *
+ * A development chief's authority is cumulative: the borehole that came in,
+ * the durbar that happened, the students placed this year. Nothing else on
+ * this site carries a date, so a second visit looks identical to the first
+ * and regional press has nothing to cite.
+ *
+ * Add newest first. `date` is ISO so it sorts and machines can read it;
+ * `image` is optional and should be a photograph, never a render. While this
+ * array is empty the section renders nothing at all, so an empty archive is
+ * never published.
+ */
+export type Update = {
+  id: string;
+  /* ISO date, YYYY-MM-DD. Displayed in full, e.g. 14 March 2026. */
+  date: string;
+  title: string;
+  body: string;
+  image?: string;
+  alt?: string;
+};
+
+export const UPDATES: Update[] = [];
+
+export const UPDATES_INTRO =
+  'Work as it happens, dated and photographed, so the record can be checked rather than taken on trust.';
+
+export function formatUpdateDate(iso: string): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  return new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(d);
+}
 
 export const NAV_LINKS = [
   { id: 'ruler', label: 'The Ruler' },

@@ -1,17 +1,44 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowRight, WarningCircle } from '@phosphor-icons/react/dist/ssr';
-import { ENGAGE_ROUTES, CONTACT } from '@/lib/content';
+import {
+  ArrowRight,
+  WarningCircle,
+  WhatsappLogo,
+  Phone,
+  EnvelopeSimple,
+} from '@phosphor-icons/react/dist/ssr';
+import {
+  ENGAGE_ROUTES,
+  CONTACT,
+  contactValue,
+  whatsappHref,
+  telHref,
+} from '@/lib/content';
 import { Reveal } from './Reveal';
 
 type Errors = Partial<Record<'name' | 'email' | 'organisation' | 'detail', string>>;
-type Status = 'idle' | 'loading' | 'sent';
+type Status = 'idle' | 'loading' | 'sent' | 'failed';
 
 export function Engage() {
   const [route, setRoute] = useState(ENGAGE_ROUTES[0].id);
   const [errors, setErrors] = useState<Errors>({});
   const [status, setStatus] = useState<Status>('idle');
+  /* Held so a failed send can hand the reader their own message back as a
+     pre-filled email rather than making them type it twice. */
+  const [rescue, setRescue] = useState<string | null>(null);
+
+  const email = contactValue('email');
+  const phone = contactValue('phone');
+  const selectedRoute =
+    ENGAGE_ROUTES.find((r) => r.id === route) ?? ENGAGE_ROUTES[0];
+  /* Pre-filled with the route the reader actually chose, so the office knows
+     what the message is about before reading a word of it. */
+  const whatsapp = whatsappHref(
+    `Good day. I am writing to the office of the Nkosuo Hene of Adrobaa regarding: ${selectedRoute.title}.`,
+  );
+  const tel = telHref();
+  const hasDirectRoute = Boolean(whatsapp || tel || email);
 
   function validate(form: HTMLFormElement): Errors {
     const data = new FormData(form);
@@ -48,10 +75,46 @@ export function Engage() {
     }
 
     setStatus('loading');
-    /* No endpoint is wired yet. Point this at the palace inbox or a form
-       service and remove the timeout. */
-    await new Promise((r) => setTimeout(r, 900));
-    setStatus('sent');
+
+    const data = new FormData(form);
+
+    if (email) {
+      const subject = `${selectedRoute.title}: ${String(data.get('organisation') ?? '')}`;
+      const body = [
+        `Name: ${String(data.get('name') ?? '')}`,
+        `Organisation: ${String(data.get('organisation') ?? '')}`,
+        '',
+        String(data.get('detail') ?? ''),
+      ].join('\n');
+      setRescue(
+        `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
+      );
+    }
+
+    try {
+      const res = await fetch('/api/engage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: String(data.get('name') ?? ''),
+          email: String(data.get('email') ?? ''),
+          organisation: String(data.get('organisation') ?? ''),
+          detail: String(data.get('detail') ?? ''),
+          route: String(data.get('route') ?? ''),
+          website: String(data.get('website') ?? ''),
+        }),
+      });
+
+      /* Only a confirmed delivery is reported as one. Anything else sends
+         the reader to a route that actually reaches the office. */
+      if (!res.ok) {
+        setStatus('failed');
+        return;
+      }
+      setStatus('sent');
+    } catch {
+      setStatus('failed');
+    }
   }
 
   const field =
@@ -117,6 +180,62 @@ export function Engage() {
                 );
               })}
             </ul>
+
+            {/* For this audience a form is the formal route, not the usual
+                one. Rendered only where the office has supplied a number. */}
+            {hasDirectRoute && (
+              <div className="mt-300 rounded-2xl border border-ebony-line bg-ebony/60 p-300">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gold">
+                  Or reach the office directly
+                </p>
+                <div className="mt-200 grid gap-100">
+                  {whatsapp && (
+                    <a
+                      href={whatsapp}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex min-h-[48px] items-center gap-100 rounded-xl border border-ebony-line px-200 py-100 text-base font-semibold text-ivory transition-all duration-700 ease-fluid hover:border-gold hover:text-gold active:scale-[0.99]"
+                    >
+                      <WhatsappLogo
+                        size={20}
+                        weight="regular"
+                        className="shrink-0 text-gold"
+                        aria-hidden="true"
+                      />
+                      WhatsApp the office
+                    </a>
+                  )}
+                  {tel && (
+                    <a
+                      href={tel}
+                      className="group flex min-h-[48px] items-center gap-100 rounded-xl border border-ebony-line px-200 py-100 text-base font-semibold text-ivory transition-all duration-700 ease-fluid hover:border-gold hover:text-gold active:scale-[0.99]"
+                    >
+                      <Phone
+                        size={20}
+                        weight="regular"
+                        className="shrink-0 text-gold"
+                        aria-hidden="true"
+                      />
+                      {phone}
+                    </a>
+                  )}
+                  {email && (
+                    <a
+                      href={`mailto:${email}`}
+                      className="group flex min-h-[48px] items-center gap-100 rounded-xl border border-ebony-line px-200 py-100 text-base font-semibold text-ivory transition-all duration-700 ease-fluid hover:border-gold hover:text-gold active:scale-[0.99]"
+                    >
+                      <EnvelopeSimple
+                        size={20}
+                        weight="regular"
+                        className="shrink-0 text-gold"
+                        aria-hidden="true"
+                      />
+                      {email}
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
           </Reveal>
 
           {/* Form */}
@@ -138,6 +257,48 @@ export function Engage() {
                   >
                     Send another request
                   </button>
+                </div>
+              ) : status === 'failed' ? (
+                /* The send did not go through, and the reader is told so
+                   plainly rather than thanked for a message nobody received. */
+                <div role="alert" className="py-400 text-center">
+                  <h3 className="font-display text-3xl font-600 text-ivory">
+                    That message did not send
+                  </h3>
+                  <p className="mx-auto mt-200 max-w-measure text-base leading-relaxed text-ivory/65">
+                    Nothing reached the office. Your words are still in the form
+                    behind this notice, so nothing is lost. Use one of the direct
+                    routes below, or try again in a moment.
+                  </p>
+                  <div className="mt-400 flex flex-col items-center justify-center gap-100 sm:flex-row sm:gap-200">
+                    {rescue && (
+                      <a
+                        href={rescue}
+                        className="inline-flex min-h-[48px] w-full items-center justify-center gap-75 rounded-xl bg-gold px-200 py-100 text-base font-semibold text-ebony transition-all duration-700 ease-fluid hover:bg-[#e6c34d] active:scale-[0.98] sm:w-auto"
+                      >
+                        <EnvelopeSimple size={16} weight="bold" aria-hidden="true" />
+                        Send it as an email instead
+                      </a>
+                    )}
+                    {whatsapp && (
+                      <a
+                        href={whatsapp}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex min-h-[48px] w-full items-center justify-center gap-75 rounded-xl border border-white/20 px-200 py-100 text-base font-semibold text-ivory transition-all duration-700 ease-fluid hover:border-gold hover:text-gold active:scale-[0.98] sm:w-auto"
+                      >
+                        <WhatsappLogo size={16} weight="bold" aria-hidden="true" />
+                        WhatsApp the office
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setStatus('idle')}
+                      className="inline-flex min-h-[48px] w-full items-center justify-center rounded-xl border border-white/20 px-200 py-100 text-base font-semibold text-ivory transition-all duration-700 ease-fluid hover:border-gold hover:text-gold active:scale-[0.98] sm:w-auto"
+                    >
+                      Back to the form
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <form onSubmit={onSubmit} noValidate>
@@ -274,6 +435,24 @@ export function Engage() {
 
                   <input type="hidden" name="route" value={route} />
 
+                  {/* Honeypot. Clipped rather than display:none, which some
+                      bots detect, and hidden from assistive tech either way.
+                      Clipping, not a negative offset: an element parked at
+                      left:-9999px still counts towards page overflow. */}
+                  <div
+                    aria-hidden="true"
+                    className="absolute h-px w-px overflow-hidden [clip-path:inset(50%)]"
+                  >
+                    <label htmlFor="website">Leave this field empty</label>
+                    <input
+                      id="website"
+                      name="website"
+                      type="text"
+                      tabIndex={-1}
+                      autoComplete="off"
+                    />
+                  </div>
+
                   <button
                     type="submit"
                     disabled={status === 'loading'}
@@ -290,10 +469,16 @@ export function Engage() {
                     )}
                   </button>
 
-                  <p className="mt-200 text-xs leading-relaxed text-ivory/40">
+                  {/* Only supplied details are printed. A blank reads as
+                      reserve; a bracketed placeholder reads as unfinished. */}
+                  <p className="mt-200 text-xs leading-relaxed text-ivory/50">
                     {CONTACT.office}
-                    <br />
-                    {CONTACT.email} · {CONTACT.phone}
+                    {(email || phone) && (
+                      <>
+                        <br />
+                        {[email, phone].filter(Boolean).join(' · ')}
+                      </>
+                    )}
                   </p>
                 </form>
               )}

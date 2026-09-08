@@ -1,7 +1,25 @@
 import Link from 'next/link';
-import { CHIEF, COMPANY, CONTACT, NAV_LINKS, sectionHref } from '@/lib/content';
+import {
+  CHIEF,
+  COMPANY,
+  CONTACT,
+  NAV_LINKS,
+  sectionHref,
+  contactValue,
+  whatsappHref,
+  telHref,
+} from '@/lib/content';
 
 export function Footer() {
+  const email = contactValue('email');
+  const phone = contactValue('phone');
+  const press = contactValue('press');
+  const whatsapp = whatsappHref();
+  const tel = telHref();
+  /* Every line here is conditional. The office column disappears entirely
+     rather than printing a bracketed placeholder to the public. */
+  const hasOffice = Boolean(email || phone || press || whatsapp);
+
   return (
     <footer className="relative border-t border-ebony-line bg-ebony px-300 py-600 sm:px-500 sm:py-700 lg:px-800">
       <div className="mx-auto w-full max-w-[1280px]">
@@ -25,7 +43,7 @@ export function Footer() {
           </div>
 
           <nav aria-label="Footer">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ivory/40">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ivory/50">
               Sections
             </p>
             <ul className="mt-100 grid">
@@ -42,20 +60,61 @@ export function Footer() {
             </ul>
           </nav>
 
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ivory/40">
-              Office
-            </p>
-            <ul className="mt-200 grid gap-75 text-sm text-ivory/65">
-              <li>{CONTACT.email}</li>
-              <li>{CONTACT.phone}</li>
-              <li>Press: {CONTACT.press}</li>
-            </ul>
-          </div>
+          {hasOffice && (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ivory/50">
+                Office
+              </p>
+              <ul className="mt-200 grid gap-75 text-sm text-ivory/65">
+                {email && (
+                  <li>
+                    <a
+                      href={`mailto:${email}`}
+                      className="flex min-h-[44px] items-center transition-colors duration-700 ease-fluid hover:text-gold"
+                    >
+                      {email}
+                    </a>
+                  </li>
+                )}
+                {phone && tel && (
+                  <li>
+                    <a
+                      href={tel}
+                      className="flex min-h-[44px] items-center transition-colors duration-700 ease-fluid hover:text-gold"
+                    >
+                      {phone}
+                    </a>
+                  </li>
+                )}
+                {whatsapp && (
+                  <li>
+                    <a
+                      href={whatsapp}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex min-h-[44px] items-center transition-colors duration-700 ease-fluid hover:text-gold"
+                    >
+                      WhatsApp
+                    </a>
+                  </li>
+                )}
+                {press && (
+                  <li>
+                    <a
+                      href={`mailto:${press}`}
+                      className="flex min-h-[44px] items-center transition-colors duration-700 ease-fluid hover:text-gold"
+                    >
+                      Press: {press}
+                    </a>
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
         </div>
 
         <div className="mt-600 flex flex-col gap-200 border-t border-ebony-line pt-300 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-ivory/40">
+          <p className="text-xs text-ivory/50">
             © {new Date().getFullYear()} Office of the Nkosuo Hene of Adrobaa.
             All rights reserved.
           </p>

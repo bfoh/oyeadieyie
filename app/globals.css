@@ -61,6 +61,12 @@
     text-rendering: optimizeLegibility;
   }
 
+  /* Clear the fixed nav pill on any jump the browser makes itself: a shared
+     /#projects link, a back-forward restore, and every reader with reduced
+     motion, for whom Lenis and its -96px anchor offset never initialise.
+     Without this the eyebrow and part of the heading land behind the bar. */
+  section[id], [id="main"] { scroll-margin-top: 96px; }
+
   h1, h2, h3, h4 { text-wrap: balance; }
 
   /* Playfair is loose by default at display sizes. Pull it in so headings
@@ -104,6 +110,27 @@
 
   [data-image-reveal] {
     overflow: hidden;
+  }
+
+  /* The hero still, painted under the video until the video has frames.
+     One file per orientation, chosen by media query rather than by React
+     state, so the browser fetches exactly one and starts it during the
+     preload scan instead of waiting to be told which. The subject sits high
+     in both cuts, so the crop is anchored above centre; dead centre
+     decapitates him. */
+  .hero-still {
+    background-color: #111111;
+    background-image: url('/img/hero-poster.jpg');
+    background-size: cover;
+    background-position: 50% 38%;
+    background-repeat: no-repeat;
+  }
+
+  @media (max-aspect-ratio: 1/1) {
+    .hero-still {
+      background-image: url('/img/hero-poster-mobile.jpg');
+      background-position: 52% 18%;
+    }
   }
 
   /* The cloth: fixed behind everything, drifting slower than the page. */

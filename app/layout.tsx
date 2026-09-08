@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Playfair_Display, Plus_Jakarta_Sans } from 'next/font/google';
+import { SITE } from '@/lib/site';
 import './globals.css';
 
 const display = Playfair_Display({
@@ -16,10 +17,9 @@ const sans = Plus_Jakarta_Sans({
   display: 'swap',
 });
 
-const SITE = 'https://nanaoyeadieyie.com';
-
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
+  alternates: { canonical: '/' },
   title: 'Nana Oyeadieyie Barima Essoun I, Nkosuo Hene of Adrobaa',
   description:
     'Official site of Nana Oyeadieyie Barima Essoun I, Development Chief of Adrobaa in Tano North, Ahafo. Appearances, development projects and press resources.',
@@ -87,6 +87,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en-GH" className={`${display.variable} ${sans.variable}`}>
+      {/* No <link rel="preload"> for the hero still. The <picture> in Hero
+          carries fetchPriority="high" and sits at the top of the document, so
+          the preload scanner finds it and resolves <source media> itself.
+          Preload links were tried here and fetched BOTH orientations despite
+          their media attributes, which is the exact waste they were meant to
+          prevent. */}
       <body className="font-sans antialiased bg-ebony text-ivory">
         <a href="#main" className="skip-link inline-flex min-h-[44px] items-center rounded-lg bg-gold px-200 py-100 text-sm font-semibold text-ebony">
           Skip to content

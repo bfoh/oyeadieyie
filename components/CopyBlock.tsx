@@ -35,7 +35,7 @@ export function CopyBlock({
       <div className="flex flex-wrap items-center justify-between gap-200">
         <div>
           <h3 className="font-display text-xl font-600 text-ivory">{label}</h3>
-          <p className="mt-25 text-xs text-ivory/40">{wordCount}</p>
+          <p className="mt-25 text-xs text-ivory/50">{wordCount}</p>
         </div>
         <button
           type="button"

@@ -6,9 +6,12 @@ import {
   PROJECTS,
   PROJECT_TAGS,
   IMPACT,
+  IMPACT_SOURCE,
+  PROVENANCE_LABEL,
   byLens,
   type ProjectTag,
 } from '@/lib/content';
+import { ProjectProgress } from './ProjectProgress';
 import { useLens } from './LensContext';
 import { GLYPHS } from './adinkraGlyphs';
 import { Reveal } from './Reveal';
@@ -131,11 +134,20 @@ export function Projects() {
                 <dt className="mt-75 text-sm font-semibold leading-snug text-ivory/80">
                   {stat.label}
                 </dt>
-                <dd className="mt-50 hidden text-xs text-ivory/40 sm:block">{stat.note}</dd>
+                <dd className="mt-50 hidden text-xs text-ivory/50 sm:block">{stat.note}</dd>
               </div>
             ))}
           </dl>
+          {/* Which numbers the page can prove, and which the office has
+              stated. A counter with no provenance is a claim, not a record. */}
+          <p className="mt-200 max-w-[68ch] text-xs leading-relaxed text-ivory/50">
+            {IMPACT_SOURCE}
+          </p>
         </Reveal>
+
+        {/* Renders become buildings: the sequence, from the photography that
+            already existed. */}
+        <ProjectProgress />
 
         {/* Filters */}
         <Reveal delay={120}>
@@ -198,11 +210,12 @@ export function Projects() {
                         sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                         className="object-cover transition-transform duration-[1200ms] ease-fluid group-hover:scale-[1.05]"
                       />
-                      {project.illustration && (
-                        <span className="absolute bottom-100 left-100 rounded-full bg-ebony/80 px-100 py-25 text-xs font-medium text-ivory/70 backdrop-blur-sm">
-                          Illustration
-                        </span>
-                      )}
+                      {project.provenance &&
+                        PROVENANCE_LABEL[project.provenance] && (
+                          <span className="absolute bottom-100 left-100 rounded-full bg-ebony/85 px-100 py-25 text-xs font-medium text-ivory/80 backdrop-blur-sm">
+                            {PROVENANCE_LABEL[project.provenance]}
+                          </span>
+                        )}
                     </div>
                   ) : (
                     /* No photograph exists for this one yet. An adinkra is

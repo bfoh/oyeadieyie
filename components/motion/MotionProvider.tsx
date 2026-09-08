@@ -27,6 +27,24 @@ export function MotionProvider() {
     let cleanup = () => {};
     let cancelled = false;
 
+    /**
+     * The safety net on the pre-reveal rule.
+     *
+     * `html.has-motion` hides anything waiting to be revealed, which is right
+     * for a fraction of a second and wrong for anything longer: on a slow
+     * connection the hero headline, the chief's name and title, cannot paint
+     * until this dynamically imported animation bundle has arrived, parsed
+     * and run. A slow bundle should cost the entrance, never the words. If
+     * GSAP has not taken over by now, the rule is dropped and everything
+     * renders in its final state.
+     */
+    const root = document.documentElement;
+    let failsafeFired = false;
+    const failsafe = window.setTimeout(() => {
+      failsafeFired = true;
+      root.classList.remove('has-motion');
+    }, 1200);
+
     (async () => {
       const [{ gsap }, { ScrollTrigger }, LenisModule] = await Promise.all([
         import('gsap'),
@@ -39,8 +57,10 @@ export function MotionProvider() {
       gsap.registerPlugin(ScrollTrigger);
       gsap.defaults({ ease: 'power3.out', duration: 0.85 });
 
-      const root = document.documentElement;
-      root.classList.add('has-motion');
+      /* Only hide pre-reveal content if the failsafe has not already given
+         up waiting. Re-adding the class after it fired would hide the hero a
+         second time, which is the bug the failsafe exists to prevent. */
+      if (!failsafeFired) root.classList.add('has-motion');
 
       const lenis = new Lenis({
         lerp: 0.085,
@@ -50,6 +70,14 @@ export function MotionProvider() {
       });
 
       lenis.on('scroll', ScrollTrigger.update);
+
+      /* The nav overlay is modal. Body overflow alone does not necessarily
+         hold Lenis, which drives its own RAF loop, so it is stopped outright
+         while the menu is open and started again when it closes. */
+      const lock = () => lenis.stop();
+      const unlock = () => lenis.start();
+      window.addEventListener('nav:lock', lock);
+      window.addEventListener('nav:unlock', unlock);
       const tick = (time: number) => lenis.raf(time * 1000);
       gsap.ticker.add(tick);
       gsap.ticker.lagSmoothing(0);
@@ -294,6 +322,7 @@ export function MotionProvider() {
          Dropping it matters: panels that re-mount on interaction (the profile
          tabs, the kingdom timeline) would otherwise be hidden by the rule with
          no ScrollTrigger of their own, and never appear again. */
+      window.clearTimeout(failsafe);
       requestAnimationFrame(() => root.classList.remove('has-motion'));
 
       /* Measurements settle only after fonts and hero media land */
@@ -304,6 +333,8 @@ export function MotionProvider() {
 
       cleanup = () => {
         window.clearTimeout(refreshTimer);
+        window.removeEventListener('nav:lock', lock);
+        window.removeEventListener('nav:unlock', unlock);
         window.removeEventListener('load', refresh);
         gsap.ticker.remove(tick);
         lenis.destroy();
@@ -315,6 +346,7 @@ export function MotionProvider() {
 
     return () => {
       cancelled = true;
+      window.clearTimeout(failsafe);
       cleanup();
     };
   }, [pathname]);

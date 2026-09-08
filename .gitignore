@@ -12,3 +12,6 @@ videos/
 .env
 .env.local
 .vercel
+
+# TypeScript incremental build cache
+tsconfig.tsbuildinfo

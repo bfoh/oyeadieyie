@@ -1,14 +1,26 @@
 import Link from 'next/link';
-import { CONTACT } from '@/lib/content';
+import { contactValue } from '@/lib/content';
+
+/**
+ * TO DO BEFORE ANY LEGAL RELIANCE: have this reviewed by counsel. It is
+ * written to describe what the site actually does, but it has not been
+ * checked against Ghana's Data Protection Act, 2012 (Act 843). Keep this
+ * note in the code, never on the page: a published document that announces
+ * itself as an unreviewed draft is worse than one that simply is.
+ */
 
 export const metadata = {
   title: 'Privacy policy, Office of the Nkosuo Hene of Adrobaa',
   description:
     'How the Office of the Nkosuo Hene of Adrobaa handles information submitted through this site.',
+  alternates: { canonical: '/privacy' },
   robots: { index: true, follow: true },
 };
 
 export default function Privacy() {
+  /* Null until the palace supplies it, so no bracketed token is published. */
+  const email = contactValue('email');
+
   return (
     <main id="main" className="mx-auto max-w-[760px] px-300 py-800 sm:px-500 sm:py-900">
       <Link
@@ -20,9 +32,9 @@ export default function Privacy() {
       <h1 className="mt-300 font-display text-5xl font-600 leading-tight text-ivory">
         Privacy policy
       </h1>
-      <p className="mt-200 text-sm text-ivory/40">
-        This policy is a working draft. Have it reviewed by counsel before the
-        site goes live.
+      <p className="mt-200 text-sm text-ivory/50">
+        Last reviewed for the launch of this site. Written to cover what the
+        engagement form on the home page collects, and nothing beyond it.
       </p>
 
       <div className="mt-500 grid gap-400">
@@ -60,8 +72,9 @@ export default function Privacy() {
             Asking us to delete it
           </h2>
           <p className="mt-100 text-base leading-relaxed text-ivory/65">
-            Write to {CONTACT.email} and we will remove your details from our
-            records.
+            Write to the office and we will remove your details from our
+            records.{email ? ' ' : ''}
+            {email && <a href={`mailto:${email}`} className="text-gold">{email}</a>}
           </p>
         </section>
       </div>

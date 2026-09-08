@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { NAV_LINKS, CHIEF, sectionHref } from '@/lib/content';
 import { useLens } from './LensContext';
@@ -25,8 +25,14 @@ function Crest({ className = '' }: { className?: string }) {
 
 export function Nav() {
   const [open, setOpen] = useState(false);
+  /* `open` drives behaviour, `mounted` drives presence. They separate so the
+     closing transition has something to animate: with the `hidden` attribute
+     applied the instant `open` flips, the fade out never played. */
+  const [mounted, setMounted] = useState(false);
   const [active, setActive] = useState<string>('');
   const [scrolled, setScrolled] = useState(false);
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
   const { lens, setLens } = useLens();
   const pathname = usePathname();
   /* Nothing on a sub page responds to the lens, so showing the control there
@@ -105,18 +111,81 @@ export function Nav() {
     return () => io.disconnect();
   }, []);
 
-  /* Lock scroll and close on Escape while the overlay is open. */
+  /* Keep the overlay in the tree until its transition has finished. */
+  useEffect(() => {
+    if (open) {
+      setMounted(true);
+      return;
+    }
+    if (!mounted) return;
+    const t = window.setTimeout(() => setMounted(false), 700);
+    return () => window.clearTimeout(t);
+  }, [open, mounted]);
+
+  /**
+   * Modal behaviour while the overlay is open.
+   *
+   * Focus moves in, is kept in, and is handed back to the button that opened
+   * it. Without this a keyboard or screen reader user tabbed straight through
+   * the overlay and on into the page behind it, which is still there under a
+   * full screen backdrop.
+   *
+   * Lenis is stopped as well as the body overflow: Lenis drives its own RAF
+   * loop, so an overflow lock alone does not necessarily hold it.
+   */
   useEffect(() => {
     if (!open) return;
+
+    const opener = toggleRef.current;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+    document.documentElement.classList.add('nav-open');
+    /* MotionProvider owns Lenis; it listens for these rather than the nav
+       reaching across into the motion system. */
+    window.dispatchEvent(new CustomEvent('nav:lock'));
+
+    const focusables = () =>
+      Array.from(
+        overlayRef.current?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled])',
+        ) ?? [],
+      ).filter((el) => el.offsetParent !== null);
+
+    /* Next frame: the overlay has to be visible before it can take focus. */
+    const raf = requestAnimationFrame(() => focusables()[0]?.focus());
+
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
+      if (e.key === 'Escape') {
+        setOpen(false);
+        return;
+      }
+      if (e.key !== 'Tab') return;
+
+      const items = focusables();
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      const activeEl = document.activeElement as HTMLElement | null;
+
+      if (e.shiftKey && (activeEl === first || !overlayRef.current?.contains(activeEl))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && activeEl === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
+
     window.addEventListener('keydown', onKey);
     return () => {
+      cancelAnimationFrame(raf);
       document.body.style.overflow = prev;
+      document.documentElement.classList.remove('nav-open');
+      window.dispatchEvent(new CustomEvent('nav:unlock'));
       window.removeEventListener('keydown', onKey);
+      /* Only reclaim focus if it is still inside the overlay: on a route
+         change the browser has already moved it somewhere better. */
+      if (overlayRef.current?.contains(document.activeElement)) opener?.focus();
     };
   }, [open]);
 
@@ -235,6 +304,7 @@ export function Nav() {
             {/* Hamburger that morphs into an X */}
             <button
               type="button"
+              ref={toggleRef}
               onClick={() => setOpen((v) => !v)}
               aria-expanded={open}
               aria-controls="nav-overlay"
@@ -270,7 +340,11 @@ export function Nav() {
       {/* Screen filling overlay with staggered mask reveal */}
       <div
         id="nav-overlay"
-        hidden={!open}
+        ref={overlayRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Site menu"
+        hidden={!mounted}
         className={[
           'fixed inset-0 z-40 bg-ebony/90 backdrop-blur-3xl transition-all duration-700 ease-fluid',
           open ? 'opacity-100' : 'pointer-events-none opacity-0',
@@ -294,7 +368,7 @@ export function Nav() {
                   {link.label}
                   <span
                     aria-hidden="true"
-                    className="font-sans text-xs tracking-[0.2em] text-gold/45"
+                    className="font-sans text-xs tracking-[0.2em] text-gold/70"
                   >
                     {String(i + 1).padStart(2, '0')}
                   </span>
@@ -312,7 +386,7 @@ export function Nav() {
           >
             {/* The lens toggle belongs on every screen size, not desktop alone */}
             <div className={showLens ? 'md:hidden' : 'hidden'}>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ivory/40">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ivory/50">
                 Viewing lens
               </p>
               <div

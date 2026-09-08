@@ -1,7 +1,10 @@
+/* Rebuilt by scripts/build-press-kit.mjs, which reads PHOTO_SETS below, so
+   the pack and the page can never list different photographs. Run it and
+   paste the size and count it prints back here. */
 export const KIT = {
   file: '/press/adrobaa-press-kit.zip',
-  size: '4.9 MB',
-  count: '13 images',
+  size: '9.1 MB',
+  count: '21 images',
 };
 
 /* Protocol matters more to a traditional office than to a company, and getting
@@ -55,6 +58,11 @@ export const PHOTO_SETS: { id: string; title: string; body: string; shots: Shot[
         name: 'adrobaa-traditional-council.jpg',
         alt: 'Chiefs of Adrobaa seated in council',
       },
+      {
+        src: '/img/media-formal.jpg',
+        name: 'nana-oyeadieyie-seated-kente.jpg',
+        alt: 'Seated in blue and gold kente beneath the ceremonial umbrella, with family and attendants',
+      },
     ],
   },
   {
@@ -76,6 +84,26 @@ export const PHOTO_SETS: { id: string; title: string; body: string; shots: Shot[
         src: '/img/deometals-banner.jpg',
         name: 'deometals-services.jpg',
         alt: 'DeoMetals Ltd banner listing its services',
+      },
+      {
+        src: '/img/exec-office.jpg',
+        name: 'nana-oyeadieyie-office-desk.jpg',
+        alt: 'Standing at the office desk in black dress and red cap',
+      },
+      {
+        src: '/img/exec-travel.jpg',
+        name: 'nana-oyeadieyie-travel.jpg',
+        alt: 'Travelling on business for DeoMetals Ltd',
+      },
+      {
+        src: '/img/global-paris.jpg',
+        name: 'nana-oyeadieyie-international.jpg',
+        alt: 'Abroad on the international trade lines',
+      },
+      {
+        src: '/img/media-presentation.jpg',
+        name: 'nana-oyeadieyie-plaque-presentation.jpg',
+        alt: 'Receiving a plaque at the office with colleagues',
       },
     ],
   },
@@ -104,6 +132,32 @@ export const PHOTO_SETS: { id: string; title: string; body: string; shots: Shot[
         name: 'sanitation-facility-render.jpg',
         alt: 'Architectural render of the public sanitation facility',
         note: 'Render, not a photograph',
+      },
+      {
+        src: '/img/project-sanitation-aerial.jpg',
+        name: 'sanitation-facility-render-aerial.jpg',
+        alt: 'Architectural render of the sanitation facility seen from above',
+        note: 'Render, not a photograph',
+      },
+      {
+        src: '/img/project-foundation.jpg',
+        name: 'sanitation-foundation-poured.jpg',
+        alt: 'Freshly poured concrete foundation trenches on the sanitation site',
+      },
+      {
+        src: '/img/project-blockwork.jpg',
+        name: 'sanitation-blockwork.jpg',
+        alt: 'Site crew mixing concrete as the walls of the sanitation block rise',
+      },
+      {
+        src: '/img/project-commissioning.jpg',
+        name: 'sod-cutting-ceremony.jpg',
+        alt: 'Cutting the sod before elders and queen mothers to open works',
+      },
+      {
+        src: '/img/project-community.jpg',
+        name: 'community-gathering.jpg',
+        alt: 'Chiefs, queen mothers and residents gathered on site under the umbrella',
       },
     ],
   },

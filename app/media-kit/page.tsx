@@ -7,7 +7,7 @@ import {
   Check,
   FilmSlate,
 } from '@phosphor-icons/react/dist/ssr';
-import { CHIEF, COMPANY, CONTACT, FILM } from '@/lib/content';
+import { CHIEF, COMPANY, CONTACT, FILM, contactValue } from '@/lib/content';
 import {
   KIT,
   ADDRESS,
@@ -29,10 +29,14 @@ export const metadata: Metadata = {
   title: 'Press kit, Nana Oyeadieyie Barima Essoun I',
   description:
     'Approved biographies, cleared photography, correct forms of address and company information for editorial use.',
+  alternates: { canonical: '/media-kit' },
   robots: { index: true, follow: true },
 };
 
 export default function MediaKit() {
+  /* Null until the palace supplies it, so no bracketed token is published. */
+  const press = contactValue('press');
+
   return (
     <LensProvider>
       <MotionProvider />
@@ -94,7 +98,7 @@ export default function MediaKit() {
                     className="transition-transform duration-700 ease-fluid group-hover:translate-y-[2px]"
                   />
                 </a>
-                <p className="text-sm text-ivory/45">
+                <p className="text-sm text-ivory/50">
                   ZIP · {KIT.size} · {KIT.count}, biography and protocol notes
                 </p>
               </div>
@@ -143,7 +147,7 @@ export default function MediaKit() {
                 <p className="max-w-measure text-base leading-relaxed text-ivory/70">
                   {ADDRESS_NOTE}
                 </p>
-                <p className="mt-300 text-sm text-ivory/40">
+                <p className="mt-300 text-sm text-ivory/50">
                   {CHIEF.place} · {CHIEF.region}
                 </p>
               </Reveal>
@@ -406,7 +410,16 @@ export default function MediaKit() {
                     interview requests.
                   </p>
                   <ul className="mt-200 grid gap-50 text-sm text-ivory/70">
-                    <li>{CONTACT.press}</li>
+                    {press && (
+                      <li>
+                        <a
+                          href={`mailto:${press}`}
+                          className="transition-colors duration-700 ease-fluid hover:text-gold"
+                        >
+                          {press}
+                        </a>
+                      </li>
+                    )}
                     <li>{CONTACT.office}</li>
                   </ul>
                   <Link

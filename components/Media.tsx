@@ -2,14 +2,16 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { PRESS, MEDIA_KIT, CONTACT, byLens } from '@/lib/content';
+import { PRESS, MEDIA_KIT, byLens, contactValue } from '@/lib/content';
 import { useLens } from './LensContext';
 import { DownloadSimple, Check } from '@phosphor-icons/react/dist/ssr';
 import { Reveal } from './Reveal';
 
 export function Media() {
   const { lens } = useLens();
-  const press = byLens(PRESS, lens);
+  const items = byLens(PRESS, lens);
+  /* Null until the palace supplies it, so no bracket ever reaches print. */
+  const press = contactValue('press');
 
   return (
     <section
@@ -31,7 +33,7 @@ export function Media() {
 
         <div className="mt-600 grid gap-500 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-start">
           <ul data-reveal-group className="grid gap-300 sm:grid-cols-2">
-            {press.map((item, i) => (
+            {items.map((item, i) => (
               <Reveal as="li" item key={item.id} delay={i * 70}>
                 <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-ebony-line bg-ebony transition-all duration-700 ease-fluid hover:-translate-y-[4px] hover:border-gold-dim hover:shadow-[0_18px_50px_rgba(0,0,0,0.5)]">
                   <div className="relative aspect-[16/10] w-full overflow-hidden bg-ebony-card">
@@ -93,9 +95,17 @@ export function Media() {
                   aria-hidden="true"
                 />
               </Link>
-              <p className="mt-200 text-xs text-ivory/40">
-                Press desk: {CONTACT.press}
-              </p>
+              {press && (
+                <p className="mt-200 text-xs text-ivory/50">
+                  Press desk:{' '}
+                  <a
+                    href={`mailto:${press}`}
+                    className="transition-colors duration-700 ease-fluid hover:text-gold"
+                  >
+                    {press}
+                  </a>
+                </p>
+              )}
             </div>
           </Reveal>
         </div>

@@ -31,8 +31,12 @@ export function DualProfile() {
 
         {/* Toggle */}
         <Reveal delay={80}>
+          {/* Buttons with a pressed state, not tabs. The ARIA tab pattern
+              promises arrow key navigation and a roving tabindex; this control
+              had the roles without the behaviour, which tells a screen reader
+              user to expect something the page does not do. */}
           <div
-            role="tablist"
+            role="group"
             aria-label="Profile"
             className="mt-500 inline-flex rounded-2xl border border-ebony-line bg-ebony-raised p-50"
           >
@@ -42,10 +46,9 @@ export function DualProfile() {
               return (
                 <button
                   key={key}
-                  role="tab"
                   type="button"
                   id={`tab-${key}`}
-                  aria-selected={selected}
+                  aria-pressed={selected}
                   aria-controls={`panel-${key}`}
                   onClick={() => setLens(key)}
                   /* nested radius: outer 16px minus 4px gap = 12px */
@@ -64,10 +67,13 @@ export function DualProfile() {
         </Reveal>
 
         {/* Panel */}
+        {/* aria-live, because the lens control rewrites this panel, the hero
+            subline and the order of three sections with no other signal that
+            anything changed. */}
         <div
-          role="tabpanel"
           id={`panel-${profile.key}`}
           aria-labelledby={`tab-${profile.key}`}
+          aria-live="polite"
           key={profile.key}
           className="mt-400 grid gap-500 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start"
         >

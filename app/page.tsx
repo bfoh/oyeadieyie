@@ -11,34 +11,81 @@ import { Projects } from '@/components/Projects';
 import { Adinkra } from '@/components/Adinkra';
 import { FilmFeature } from '@/components/FilmFeature';
 import { Media } from '@/components/Media';
+import { Updates } from '@/components/Updates';
 import { Faq } from '@/components/Faq';
 import { Engage } from '@/components/Engage';
 import { Footer } from '@/components/Footer';
 import { FAQ, CHIEF, COMPANY } from '@/lib/content';
+import { SITE } from '@/lib/site';
 
-/* AEO: FAQ and person structured data */
+/**
+ * Structured data.
+ *
+ * Written as a graph of linked entities rather than one nested blob, so the
+ * chief, his company and the site are three things a search engine can hold
+ * separately and connect. `sameAs` is what builds a knowledge panel; fill it
+ * as soon as the office confirms its official accounts.
+ */
 function StructuredData() {
+  const person = `${SITE}/#chief`;
+  const company = `${SITE}/#deometals`;
+
   const graph = {
     '@context': 'https://schema.org',
     '@graph': [
       {
+        '@type': 'WebSite',
+        '@id': `${SITE}/#website`,
+        url: SITE,
+        name: `${CHIEF.fullName}, ${CHIEF.title}`,
+        inLanguage: 'en-GH',
+        publisher: { '@id': person },
+      },
+      {
         '@type': 'Person',
+        '@id': person,
         name: CHIEF.fullName,
+        alternateName: CHIEF.shortName,
+        honorificPrefix: 'Nana',
+        url: SITE,
+        image: `${SITE}/img/chief-portrait.jpg`,
         jobTitle: `${CHIEF.title}, ${CHIEF.titleMeaning}`,
+        description: `${CHIEF.titleMeaning} of ${CHIEF.place}, and a licensed precious metals dealer.`,
+        knowsAbout: [
+          'Akan traditional leadership',
+          'Community development',
+          'Precious metals trading',
+        ],
+        /* Add the office's confirmed accounts here. An unverified profile is
+           worse than none: it teaches search engines the wrong entity. */
+        sameAs: [],
         address: {
           '@type': 'PostalAddress',
           addressLocality: CHIEF.place,
           addressRegion: CHIEF.region,
           addressCountry: 'GH',
         },
-        worksFor: {
+        worksFor: { '@id': company },
+      },
+      {
+        '@type': 'Organization',
+        '@id': company,
+        name: COMPANY.name,
+        description: COMPANY.promise,
+        parentOrganization: {
           '@type': 'Organization',
-          name: COMPANY.name,
-          description: COMPANY.promise,
+          name: 'DGSC Group',
+        },
+        knowsAbout: COMPANY.services,
+        founder: { '@id': person },
+        address: {
+          '@type': 'PostalAddress',
+          addressCountry: 'GH',
         },
       },
       {
         '@type': 'FAQPage',
+        '@id': `${SITE}/#faq`,
         mainEntity: FAQ.map((f) => ({
           '@type': 'Question',
           name: f.q,
@@ -74,6 +121,7 @@ export default function Home() {
         <Adinkra />
         <FilmFeature />
         <Media />
+        <Updates />
         <Faq />
         <Engage />
       </main>

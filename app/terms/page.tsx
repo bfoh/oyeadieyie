@@ -1,14 +1,26 @@
 import Link from 'next/link';
-import { CONTACT } from '@/lib/content';
+import { contactValue } from '@/lib/content';
+
+/**
+ * TO DO BEFORE ANY LEGAL RELIANCE: have this reviewed by counsel. It is
+ * written to describe what the site actually does, but it has not been
+ * checked against Ghana's Data Protection Act, 2012 (Act 843). Keep this
+ * note in the code, never on the page: a published document that announces
+ * itself as an unreviewed draft is worse than one that simply is.
+ */
 
 export const metadata = {
   title: 'Terms of use, Office of the Nkosuo Hene of Adrobaa',
   description:
     'Terms governing use of this site and of the photography and press material published on it.',
+  alternates: { canonical: '/terms' },
   robots: { index: true, follow: true },
 };
 
 export default function Terms() {
+  /* Null until the palace supplies it, so no bracketed token is published. */
+  const email = contactValue('email');
+
   return (
     <main id="main" className="mx-auto max-w-[760px] px-300 py-800 sm:px-500 sm:py-900">
       <Link
@@ -20,9 +32,9 @@ export default function Terms() {
       <h1 className="mt-300 font-display text-5xl font-600 leading-tight text-ivory">
         Terms of use
       </h1>
-      <p className="mt-200 text-sm text-ivory/40">
-        This document is a working draft. Have it reviewed by counsel before the
-        site goes live.
+      <p className="mt-200 text-sm text-ivory/50">
+        Last reviewed for the launch of this site. These terms cover use of the
+        material published here, including the press kit.
       </p>
 
       <div className="mt-500 grid gap-400">
@@ -61,7 +73,15 @@ export default function Terms() {
             Contact
           </h2>
           <p className="mt-100 text-base leading-relaxed text-ivory/65">
-            Questions about these terms go to {CONTACT.email}.
+            Questions about these terms go to the office of the Nkosuo Hene.
+            {email && (
+              <>
+                {' '}
+                <a href={`mailto:${email}`} className="text-gold">
+                  {email}
+                </a>
+              </>
+            )}
           </p>
         </section>
       </div>
