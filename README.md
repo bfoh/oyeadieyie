@@ -382,6 +382,52 @@ the numeric keys. If headings ever look flat again, check that block first.
   the last frame matches the first and the loop stops jumping. Rebuild with
   the `blend=all_expr` recipe in git history rather than a plain trim.
 
+## The admin
+
+`/admin`, behind a password. Three pages: a dashboard counted from the
+published content, the branding hub, and a checklist of what the site is
+waiting on from the palace.
+
+```
+ADMIN_PASSWORD=...        # at least 8 characters, set in Vercel
+```
+
+Until it is set the admin refuses every attempt rather than falling back to a
+default, because a default password on a public address is the same as no
+password at all. The cookie carries an HMAC of a fixed label under the
+password, never the password itself.
+
+Two layers guard it. `middleware.ts` bounces anyone without a cookie before
+any admin markup renders; the layout in `app/admin/(protected)/` verifies the
+cookie's signature, which the middleware cannot do because the edge runtime
+has no `node:crypto`. The login page sits outside that route group — when it
+was inside, it redirected to itself forever. Admin pages are `noindex` and
+absent from the sitemap.
+
+### The branding hub
+
+`lib/brandAssets.ts` declares what the office can issue and the fields each
+piece takes; `components/admin/AssetPreview.tsx` draws them. Twelve assets
+across stationery, ceremonial and digital: letterhead, calling card,
+compliment slip, envelope, durbar invitation, citation, project signboard,
+order of proceedings, email signature, quote card, announcement card and
+press release header.
+
+Three things worth keeping:
+
+- **Paper prints dark ink on cream, not the site's ebony.** A letterhead that
+  arrives as a solid black sheet is one nobody can afford to print. Screen
+  assets keep the site's ebony and gold.
+- **The download is exported from the very node on screen**, via
+  `html-to-image` at 3x, so the file cannot drift from the approved preview.
+  PDFs wrap that image at the sheet's real millimetre size.
+- **Type inside a preview is set in absolute pixels against a canonical
+  canvas**, and every appearance scales the whole thing with a transform.
+  Millimetre assets scale by physical size, so a calling card stays small
+  beside an A4 sheet; pixel assets all draw on one 560px canvas. Do not
+  re-flow previews to fit their container, or a thumbnail stops being an
+  honest miniature of the sheet.
+
 ## Updates
 
 `UPDATES` in `lib/content.ts` is empty and `components/Updates.tsx` renders
