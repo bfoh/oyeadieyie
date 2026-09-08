@@ -17,48 +17,95 @@ export function Hero() {
   useEffect(() => {
     const isPortrait = window.matchMedia('(max-aspect-ratio: 1/1)').matches;
     setPortrait(isPortrait);
-    setSrc(isPortrait ? '/video/hero-mobile.mp4' : '/video/hero.mp4');
+    setSrc(isPortrait ? '/video/hero-mobile-v2.mp4' : '/video/hero-v2.mp4');
   }, []);
 
-  /* Autoplay is a request, not a guarantee: browsers refuse it while the
-     file is still buffering, and some refuse the first attempt outright.
-     Ask again on canplay and once more after any refusal. */
+  /**
+   * Load the chosen cut and ask it to play.
+   *
+   * The source is assigned to the element here rather than rendered as a
+   * <source> child. A media element runs its resource selection algorithm
+   * when it is inserted; a <source> appended afterwards only starts a load if
+   * the browser re-runs that algorithm, which Chrome does and Safari does
+   * not. Because orientation is unknown until this effect runs, the server
+   * rendered a <video> with no source at all, so on an iPhone the element
+   * sat empty and the hero never moved. Setting `src` invokes resource
+   * selection on every browser, exactly once, so this is both the fix and
+   * still a single download.
+   *
+   * Autoplay is a request, not a guarantee. iOS grants it only for muted,
+   * inline, silent video, and refuses outright in Low Power Mode whatever
+   * the markup says. So: set the conditions as properties, not just
+   * attributes, retry as data arrives, and fall back to the reader's first
+   * touch anywhere on the page.
+   */
   useEffect(() => {
     const v = videoRef.current;
     if (!v || !src) return;
 
-    /* No v.load() here. React mounts the <source> as soon as `src` resolves
-       and the browser begins fetching immediately; calling load() restarted
-       that fetch, and the network log showed the file downloaded twice —
-       2.0 MB of mobile data for a 1.05 MB clip. */
+    /* iOS checks the properties, and React sets `muted` as a property rather
+       than a parsed attribute, so state it plainly on the element. */
+    v.muted = true;
+    v.defaultMuted = true;
+    v.playsInline = true;
+
+    if (v.getAttribute('src') !== src) {
+      v.setAttribute('src', src);
+      v.load();
+    }
 
     let cancelled = false;
+    let settled = false;
+
     const attempt = () => {
-      if (cancelled) return;
+      if (cancelled || settled) return;
       const p = v.play();
       if (p && typeof p.catch === 'function') {
-        p.catch(() => {
-          /* Refused for now. The poster is already painted, so the hero is
-             never blank; try once more when more data has arrived. */
+        p.then(() => {
+          settled = true;
+        }).catch(() => {
+          /* Refused for now. The still is already painted, so the hero is
+             never blank; try again when more data arrives, or on a touch. */
         });
       }
     };
 
     attempt();
+    v.addEventListener('loadedmetadata', attempt);
     v.addEventListener('loadeddata', attempt);
     v.addEventListener('canplay', attempt);
 
+    /* Low Power Mode, and Safari's stricter moments, refuse autoplay until a
+       gesture. The reader's first touch or click anywhere starts it, once. */
+    const onGesture = () => {
+      attempt();
+      if (!v.paused) removeGesture();
+    };
+    const removeGesture = () => {
+      document.removeEventListener('touchstart', onGesture);
+      document.removeEventListener('pointerdown', onGesture);
+      document.removeEventListener('click', onGesture);
+    };
+    document.addEventListener('touchstart', onGesture, { passive: true });
+    document.addEventListener('pointerdown', onGesture, { passive: true });
+    document.addEventListener('click', onGesture);
+
     /* A tab restored from the background pauses; resume when it returns. */
     const onVisible = () => {
-      if (document.visibilityState === 'visible' && v.paused) attempt();
+      if (document.visibilityState === 'visible' && v.paused) {
+        settled = false;
+        attempt();
+      }
     };
     document.addEventListener('visibilitychange', onVisible);
 
     return () => {
       cancelled = true;
+      v.removeEventListener('loadedmetadata', attempt);
       v.removeEventListener('loadeddata', attempt);
       v.removeEventListener('canplay', attempt);
       document.removeEventListener('visibilitychange', onVisible);
+      removeGesture();
     };
   }, [src]);
 
@@ -77,7 +124,7 @@ export function Hero() {
           was tried instead and was worse, because Chromium's preload scanner
           fetches the <img src> fallback alongside the matching <source>.
           One media query, one file, painted before any JavaScript runs. */}
-      <div className="absolute inset-0 hero-still" data-parallax="0.12">
+      <div className="hero-media hero-still absolute inset-0" data-parallax="0.12">
         <video
           ref={videoRef}
           /* The subject sits high in frame in both cuts, so the crop is
@@ -90,22 +137,23 @@ export function Hero() {
           muted
           loop
           playsInline
-          preload={src ? 'auto' : 'none'}
+          /* Safe to leave at auto: with no src there is nothing to preload,
+             and once the effect assigns one the file should load at once.
+             "none" actively discouraged iOS from ever starting. */
+          preload="auto"
           /* Set only once orientation is known, and always to the file the
              CSS above has already fetched, so this costs no extra request
              and gives the video element something to paint immediately. */
           poster={
             src
               ? portrait
-                ? '/img/hero-poster-mobile.jpg'
-                : '/img/hero-poster.jpg'
+                ? '/img/hero-poster-mobile-v2.jpg'
+                : '/img/hero-poster-v2.jpg'
               : undefined
           }
           disablePictureInPicture
           aria-label="Nana Oyeadieyie Barima Essoun I walking in adinkra regalia beneath the royal umbrella"
-        >
-          {src && <source src={src} type="video/mp4" />}
-        </video>
+        />
       </div>
 
       {/* Flat scrims, no decorative background gradient */}

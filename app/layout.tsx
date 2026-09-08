@@ -68,7 +68,7 @@ export const metadata: Metadata = {
       'Development Chief of Adrobaa, Tano North. Preserving heritage, funding progress.',
     images: [
       {
-        url: '/img/hero-poster.jpg',
+        url: '/img/hero-poster-v2.jpg',
         width: 1920,
         height: 1080,
         alt: 'Nana Oyeadieyie Barima Essoun I in adinkra regalia beneath the royal umbrella',
@@ -80,7 +80,7 @@ export const metadata: Metadata = {
     title: 'Nana Oyeadieyie Barima Essoun I, Nkosuo Hene of Adrobaa',
     description:
       'Development Chief of Adrobaa, Tano North. Preserving heritage, funding progress.',
-    images: ['/img/hero-poster.jpg'],
+    images: ['/img/hero-poster-v2.jpg'],
   },
   icons: {
     /* Portrait of the chief, cropped to the head and set in the gold ring.

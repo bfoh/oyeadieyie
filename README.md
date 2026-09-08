@@ -363,8 +363,24 @@ the numeric keys. If headings ever look flat again, check that block first.
   which meant the chief's name could not paint until the GSAP and Lenis bundles
   had downloaded and run. A slow bundle should cost the entrance, not the
   words. If the failsafe has fired, the class is not re-added.
-- **Static media carries immutable cache headers** (`next.config.mjs`). Change
-  the filename when the media changes.
+- **Static media carries immutable cache headers** (`next.config.mjs`), so the
+  filename MUST change when the media changes. This was learned the hard way:
+  the hero video was replaced in place and the browser kept serving the old
+  one from cache. Hence `hero-v2.mp4`. Bump the suffix on every re-encode.
+- **Never call `video.load()` after appending a `<source>`, and never rely on
+  an appended `<source>` at all.** A media element runs resource selection
+  when it is inserted; a `<source>` added afterwards only starts a load if the
+  browser re-runs that algorithm, which Chrome does and Safari does not. Since
+  orientation is unknown at render time, the server sent a `<video>` with no
+  source, and on iPhone it simply sat there. `Hero.tsx` now assigns `src` to
+  the element itself, which invokes resource selection everywhere, once.
+- **The hero loop is cross-dissolved.** The master is a single handheld shot
+  in which the camera never returns to where it started, so no window of it
+  loops naturally: the best candidate still differed by 71/255 between its
+  first and last frame, and the shipped cut differed by 121. The published
+  cuts blend their tail back over their head (0.8s desktop, 0.7s mobile), so
+  the last frame matches the first and the loop stops jumping. Rebuild with
+  the `blend=all_expr` recipe in git history rather than a plain trim.
 
 ## Updates
 

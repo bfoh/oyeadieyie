@@ -9,11 +9,15 @@ import { GLYPHS } from './adinkraGlyphs';
  * A chief's adinkra cloth is stamped edge to edge, so this is one fixed layer
  * behind every section rather than a decoration inside a few of them.
  *
- * It renders only as many stamps as the viewport actually needs. A fixed count
- * put 420 inline SVGs on a phone, most of them below the fold: dead DOM that
- * still costs memory and style recalculation on the devices least able to
- * afford it. Decorative, so it is hidden from assistive tech and never takes
- * a pointer event.
+ * It is a SINGLE <svg>: the ten stamps are declared once as <symbol>s and
+ * placed with <use>. The earlier version rendered one <svg> element per
+ * stamp, up to 420 of them, and each root gave the compositor its own paint
+ * context. Under the nav's backdrop blur — which has to re-blur whatever
+ * moves beneath it every frame — that collapsed scrolling to a few frames a
+ * second while the hero video was playing. Same picture, one paint context.
+ *
+ * Decorative, so it is hidden from assistive tech and never takes a pointer
+ * event.
  */
 const KEYS = Object.keys(GLYPHS);
 
@@ -25,20 +29,32 @@ const ORDER = [
   2, 6, 0, 9, 3, 7, 1, 4, 8, 5,
 ];
 
+type Grid = { cell: number; cols: number; rows: number; pitch: number; w: number; h: number };
+
 export function AdinkraCloth({ opacity = 0.04 }: { opacity?: number }) {
-  const [grid, setGrid] = useState<{ cell: number; count: number } | null>(null);
+  const [grid, setGrid] = useState<Grid | null>(null);
 
   useEffect(() => {
     const measure = () => {
-      const w = window.innerWidth;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
       /* Larger stamps on a narrow screen. A fine texture sized for a desktop
          just turns to noise at phone width. */
-      const cell = w < 640 ? 96 : w < 1024 ? 88 : 84;
+      const cell = vw < 640 ? 96 : vw < 1024 ? 88 : 84;
       const gap = Math.round(cell * 0.62);
       const pitch = cell + gap;
-      const cols = Math.ceil((w * 1.14) / pitch);
-      const rows = Math.ceil((window.innerHeight * 1.3) / pitch);
-      setGrid({ cell, count: Math.min(cols * rows, 420) });
+      /* The layer is inset past the viewport on every side so the parallax
+         drift never exposes an edge. */
+      const w = vw * 1.14;
+      const h = vh * 1.3;
+      setGrid({
+        cell,
+        pitch,
+        w,
+        h,
+        cols: Math.ceil(w / pitch) + 1,
+        rows: Math.ceil(h / pitch) + 1,
+      });
     };
     measure();
 
@@ -56,40 +72,56 @@ export function AdinkraCloth({ opacity = 0.04 }: { opacity?: number }) {
 
   if (!grid) return null;
 
+  const stamps: { key: string; id: string; x: number; y: number }[] = [];
+  let i = 0;
+  for (let row = 0; row < grid.rows; row++) {
+    for (let col = 0; col < grid.cols; col++) {
+      const id = KEYS[ORDER[i % ORDER.length] % KEYS.length];
+      if (GLYPHS[id]) {
+        stamps.push({
+          key: `${row}-${col}`,
+          id,
+          /* Every other row is offset, the way a hand stamped cloth falls. */
+          x: col * grid.pitch + (row % 2 ? grid.cell * 0.32 : 0),
+          y: row * grid.pitch,
+        });
+      }
+      i++;
+    }
+  }
+
   return (
     <div className="cloth-layer" aria-hidden="true" data-parallax="0.06">
-      <div
-        style={{
-          opacity,
-          display: 'grid',
-          gridTemplateColumns: `repeat(auto-fill, minmax(${grid.cell}px, 1fr))`,
-          gap: `${Math.round(grid.cell * 0.62)}px`,
-          /* Rows must be explicit. With auto rows the stamps have no height
-             to fill and the layer collapses to nothing. */
-          gridAutoRows: `${grid.cell}px`,
-          alignContent: 'start',
-          width: '100%',
-          transition: 'opacity 900ms cubic-bezier(0.32,0.72,0,1)',
-        }}
+      <svg
+        width="100%"
+        height="100%"
+        viewBox={`0 0 ${Math.round(grid.w)} ${Math.round(grid.h)}`}
+        preserveAspectRatio="xMidYMid slice"
+        style={{ opacity, display: 'block' }}
+        className="text-gold"
       >
-        {Array.from({ length: grid.count }).map((_, i) => {
-          const g = GLYPHS[KEYS[ORDER[i % ORDER.length] % KEYS.length]];
-          if (!g) return null;
-          const row = Math.floor(i / 6);
-          return (
-            <svg
-              key={i}
-              viewBox={g.viewBox}
-              className="h-full w-full text-gold"
-              style={{
-                transform: row % 2 ? `translateX(${grid.cell * 0.32}px)` : undefined,
-              }}
-            >
-              {g.el}
-            </svg>
-          );
-        })}
-      </div>
+        <defs>
+          {KEYS.map((key) => {
+            const g = GLYPHS[key];
+            if (!g) return null;
+            return (
+              <symbol key={key} id={`cloth-${key}`} viewBox={g.viewBox}>
+                {g.el}
+              </symbol>
+            );
+          })}
+        </defs>
+        {stamps.map((s) => (
+          <use
+            key={s.key}
+            href={`#cloth-${s.id}`}
+            x={s.x}
+            y={s.y}
+            width={grid.cell}
+            height={grid.cell}
+          />
+        ))}
+      </svg>
     </div>
   );
 }

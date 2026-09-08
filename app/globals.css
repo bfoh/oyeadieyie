@@ -120,7 +120,7 @@
      decapitates him. */
   .hero-still {
     background-color: #111111;
-    background-image: url('/img/hero-poster.jpg');
+    background-image: url('/img/hero-poster-v2.jpg');
     background-size: cover;
     background-position: 50% 38%;
     background-repeat: no-repeat;
@@ -128,12 +128,16 @@
 
   @media (max-aspect-ratio: 1/1) {
     .hero-still {
-      background-image: url('/img/hero-poster-mobile.jpg');
+      background-image: url('/img/hero-poster-mobile-v2.jpg');
       background-position: 52% 18%;
     }
   }
 
-  /* The cloth: fixed behind everything, drifting slower than the page. */
+  /* The cloth: fixed behind everything, drifting slower than the page.
+     Promoted to its own compositor layer and isolated from the rest of the
+     page, so the parallax moves an already-rasterised texture instead of
+     forcing a repaint of the layer, and of everything the blurred nav sits
+     over, on every frame. */
   .cloth-layer {
     position: fixed;
     inset: -14% -6%;
@@ -141,6 +145,16 @@
     overflow: hidden;
     pointer-events: none;
     user-select: none;
+    will-change: transform;
+    transform: translateZ(0);
+    contain: strict;
+  }
+
+  /* Same reasoning for the hero footage, which is parallaxed while playing. */
+  .hero-media {
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 
   /* B5: the one permitted gradient, on hero heading text only */

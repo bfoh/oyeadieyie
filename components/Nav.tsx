@@ -202,8 +202,8 @@ export function Nav() {
                sitting on top of the content. The controls keep their own
                surfaces so they stay legible and tappable over any image. */
             scrolled && !open
-              ? 'border border-transparent bg-transparent shadow-none backdrop-blur-none sm:border-white/10 sm:bg-black/60 sm:shadow-[0_8px_40px_rgba(0,0,0,0.55)] sm:backdrop-blur-2xl'
-              : 'border border-white/10 bg-black/60 shadow-[0_8px_40px_rgba(0,0,0,0.55)] backdrop-blur-2xl',
+              ? 'border border-transparent bg-transparent shadow-none backdrop-blur-none sm:border-white/10 sm:bg-black/60 sm:shadow-[0_8px_40px_rgba(0,0,0,0.55)] sm:backdrop-blur-md'
+              : 'border border-white/10 bg-black/60 shadow-[0_8px_40px_rgba(0,0,0,0.55)] backdrop-blur-md',
           ].join(' ')}
         >
           <div className="flex items-center gap-200 py-75 pl-200 pr-75">
@@ -353,7 +353,7 @@ export function Nav() {
         aria-label="Site menu"
         hidden={!mounted}
         className={[
-          'fixed inset-0 z-40 bg-ebony/90 backdrop-blur-3xl transition-all duration-700 ease-fluid',
+          'fixed inset-0 z-40 bg-ebony/95 backdrop-blur-md transition-all duration-700 ease-fluid',
           open ? 'opacity-100' : 'pointer-events-none opacity-0',
         ].join(' ')}
       >
