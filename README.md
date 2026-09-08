@@ -396,9 +396,15 @@ the numeric keys. If headings ever look flat again, check that block first.
   re-composite the masked area against whatever is beneath it, and beneath
   these is a playing video. A `linear-gradient` background is the same picture
   for free.
-- **`scrub: true` on the parallax, not a number.** Lenis already smooths the
-  scroll position; a numeric scrub adds a second lerp on top, and two smoothers
-  chained make the hero swim behind the page instead of tracking it.
+- **There is no parallax on this site.** The hero was the last thing using it
+  and it is gone: moving a playing video on every scroll frame, underneath a
+  fixed blurred nav, is a great deal to pay for an effect a reader does not
+  consciously notice, and it was the remaining suspect for the laptop judder.
+  The mechanism went with it rather than being left as dead code — if it is
+  ever wanted back, it was a `[data-parallax]` sweep in `MotionProvider`, and
+  the one rule worth remembering is `scrub: true` rather than a number, since
+  Lenis already smooths the scroll and two chained smoothers make a layer swim
+  instead of track.
 - **The cloth layer does not move.** Six per cent of parallax drift was not
   perceptible, and paying for it meant a fixed, full-viewport SVG layer was
   re-composited every scroll frame underneath a backdrop-blurred nav, which

@@ -80,7 +80,6 @@ export function Hero() {
     <section
       id="top"
       data-hero
-      data-parallax-section
       className="relative min-h-[100svh] w-full overflow-hidden"
     >
       {/* Full bleed footage.
@@ -91,7 +90,7 @@ export function Hero() {
           was tried instead and was worse, because Chromium's preload scanner
           fetches the <img src> fallback alongside the matching <source>.
           One media query, one file, painted before any JavaScript runs. */}
-      <div className="hero-media hero-still absolute inset-0" data-parallax="0.12">
+      <div className="hero-still absolute inset-0">
         <video
           id={VIDEO_ID}
           ref={videoRef}

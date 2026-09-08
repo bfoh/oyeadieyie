@@ -274,26 +274,10 @@ export function MotionProvider() {
           });
         });
 
-        /* ---------------- parallax ---------------- */
-        /* scrub: true, not a number. Lenis already smooths the scroll
-           position; a numeric scrub adds a second lerp on top of it, and two
-           smoothers chained make the hero swim behind the page rather than
-           track it. One smoother, applied once. */
-        gsap.utils.toArray<HTMLElement>('[data-parallax]').forEach((layer) => {
-          const speed = Number(layer.dataset.parallax || 0.16);
-          const section = layer.closest('[data-parallax-section]') || layer;
-          gsap.to(layer, {
-            y: () => window.innerHeight * speed * -1,
-            ease: 'none',
-            scrollTrigger: {
-              trigger: section,
-              start: 'top bottom',
-              end: 'bottom top',
-              scrub: true,
-              invalidateOnRefresh: true,
-            },
-          });
-        });
+        /* There is no parallax on this site any more. The hero was the only
+           thing using it, and moving a playing video under a fixed blurred
+           nav on every scroll frame is a lot to pay for an effect the reader
+           does not consciously notice. Removed rather than tuned. */
 
         /* ---------------- magnetic primary actions ---------------- */
         if (!window.matchMedia('(pointer: coarse)').matches) {

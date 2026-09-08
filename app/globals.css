@@ -152,19 +152,9 @@
     contain: strict;
   }
 
-  /* The hero footage is parallaxed while it plays, so it keeps its own
-     compositor layer. The video inside gets one too: a video being moved by
-     a transform should be handed to the compositor whole, not repainted. */
-  .hero-media {
-    will-change: transform;
-    transform: translateZ(0);
-    backface-visibility: hidden;
-  }
-
-  .hero-video {
-    transform: translateZ(0);
-    backface-visibility: hidden;
-  }
+  /* No compositor hints on the hero footage: nothing transforms it any more,
+     and `will-change` on a full-viewport layer that never moves just holds a
+     texture for no reason. A playing video is composited on its own anyway. */
 
   /* B5: the one permitted gradient, on hero heading text only */
   .heading-gradient {
