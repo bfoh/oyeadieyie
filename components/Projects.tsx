@@ -3,14 +3,13 @@
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import {
-  PROJECTS,
   PROJECT_TAGS,
-  IMPACT,
   IMPACT_SOURCE,
   PROVENANCE_LABEL,
   byLens,
   type ProjectTag,
 } from '@/lib/content';
+import type { StoredImpact, StoredProject } from '@/lib/store';
 import { ProjectProgress } from './ProjectProgress';
 import { useLens } from './LensContext';
 import { GLYPHS } from './adinkraGlyphs';
@@ -83,13 +82,19 @@ function Counter({
   );
 }
 
-export function Projects() {
+export function Projects({
+  projects,
+  impact,
+}: {
+  projects: StoredProject[];
+  impact: StoredImpact[];
+}) {
   const [filter, setFilter] = useState<ProjectTag | 'All'>('All');
   const { lens } = useLens();
 
   /* The lens reorders the record, it never filters it. Everything stays
      reachable however the viewer is reading the page. */
-  const ordered = byLens(PROJECTS, lens);
+  const ordered = byLens(projects, lens);
   const shown =
     filter === 'All' ? ordered : ordered.filter((p) => p.tag === filter);
 
@@ -119,14 +124,14 @@ export function Projects() {
         {/* Impact counter */}
         <Reveal delay={80}>
           <dl className="mt-400 grid grid-cols-2 gap-100 sm:mt-500 sm:gap-200 lg:grid-cols-4">
-            {IMPACT.map((stat) => (
+            {impact.map((stat) => (
               <div
                 key={stat.id}
                 className="rounded-2xl border border-ebony-line bg-ebony p-200 transition-colors duration-700 ease-fluid hover:border-gold-dim sm:p-300"
               >
                 <dd className="font-display text-3xl font-600 leading-none text-ivory sm:text-4xl lg:text-5xl">
                   <Counter
-                    value={stat.value}
+                    value={stat.attribution === 'counted' ? projects.length : stat.value}
                     prefix={stat.prefix}
                     suffix={stat.suffix}
                   />
@@ -147,7 +152,7 @@ export function Projects() {
 
         {/* Renders become buildings: the sequence, from the photography that
             already existed. */}
-        <ProjectProgress />
+        <ProjectProgress projects={projects} />
 
         {/* Filters */}
         <Reveal delay={120}>

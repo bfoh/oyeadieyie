@@ -1,4 +1,4 @@
-import { PROJECTS, isSupplied } from '@/lib/content';
+import { isSupplied } from '@/lib/content';
 import { readContent } from '@/lib/store';
 
 /**
@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function ChecklistPage() {
   const content = await readContent({ fresh: true });
-  const illustrated = PROJECTS.filter((p) => p.provenance === 'illustration');
+  const illustrated = content.projects.filter((p) => p.provenance === 'illustration');
   const supplied = (k: keyof typeof content.contact) => isSupplied(content.contact[k]);
 
   const items: Item[] = [

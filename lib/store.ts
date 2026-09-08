@@ -1,5 +1,12 @@
 import { put, list, del } from '@vercel/blob';
-import { UPDATES, GALLERY, CONTACT, type Update } from './content';
+import {
+  UPDATES,
+  GALLERY,
+  CONTACT,
+  PROJECTS,
+  IMPACT,
+  type Update,
+} from './content';
 
 /**
  * The editable half of the site.
@@ -63,11 +70,25 @@ export type Enquiry = {
   note?: string;
 };
 
+/**
+ * The development record, as the office maintains it.
+ *
+ * These moved out of lib/content.ts because a project's status is the field
+ * that changes most for a *development* chief — Committed, then In
+ * construction, then Delivered — and changing it used to need a developer.
+ * The compiled values stay as the seed and the fallback, so an unreachable
+ * store still renders the site as published.
+ */
+export type StoredProject = (typeof PROJECTS)[number];
+export type StoredImpact = (typeof IMPACT)[number];
+
 export type SiteContent = {
   updates: Update[];
   events: SiteEvent[];
   gallery: GalleryImage[];
   enquiries: Enquiry[];
+  projects: StoredProject[];
+  impact: StoredImpact[];
   contact: {
     email: string;
     phone: string;
@@ -120,6 +141,8 @@ export function baseContent(): SiteContent {
       addedAt: '',
     })),
     enquiries: [],
+    projects: PROJECTS,
+    impact: IMPACT,
     contact: {
       email: CONTACT.email,
       phone: CONTACT.phone,
@@ -183,6 +206,8 @@ export async function readContent(
       events: parsed.events ?? base.events,
       gallery: parsed.gallery ?? base.gallery,
       enquiries: parsed.enquiries ?? base.enquiries,
+      projects: parsed.projects?.length ? parsed.projects : base.projects,
+      impact: parsed.impact?.length ? parsed.impact : base.impact,
       contact: { ...base.contact, ...(parsed.contact ?? {}) },
       updatedAt: parsed.updatedAt ?? '',
     };

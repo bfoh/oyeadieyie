@@ -128,7 +128,7 @@ export default async function Home() {
         <TaglineReveal />
         <Kingdom gallery={content.gallery} />
         <Vision />
-        <Projects />
+        <Projects projects={content.projects} impact={content.impact} />
         <Adinkra />
         <FilmFeature />
         <Media />

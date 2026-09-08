@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { PROJECTS, ADINKRA, FAQ, CHIEF, isSupplied } from '@/lib/content';
+import { ADINKRA, FAQ, CHIEF, isSupplied } from '@/lib/content';
 import { PHOTO_SETS } from '@/lib/presskit';
 import { BRAND_ASSETS } from '@/lib/brandAssets';
 import { readContent } from '@/lib/store';
@@ -23,8 +23,8 @@ export default async function AdminDashboard() {
   const content = await readContent({ fresh: true });
 
   const photos = PHOTO_SETS.reduce((n, s) => n + s.shots.length, 0);
-  const delivered = PROJECTS.filter((p) => p.status === 'Delivered').length;
-  const illustrated = PROJECTS.filter((p) => p.provenance === 'illustration').length;
+  const delivered = content.projects.filter((p) => p.status === 'Delivered').length;
+  const illustrated = content.projects.filter((p) => p.provenance === 'illustration').length;
   const supplied = (k: keyof typeof content.contact) => isSupplied(content.contact[k]);
 
   const missing = [
@@ -50,7 +50,7 @@ export default async function AdminDashboard() {
         ? `${content.enquiries.length} received in all`
         : 'No enquiries yet',
     },
-    { label: 'Projects on the agenda', value: PROJECTS.length, note: `${delivered} delivered` },
+    { label: 'Projects on the agenda', value: content.projects.length, note: `${delivered} delivered` },
     {
       label: 'Dated updates',
       value: content.updates.length,

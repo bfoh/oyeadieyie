@@ -7,6 +7,7 @@ import {
   newId,
   deleteImageFile,
   type SiteContent,
+  type StoredProject,
 } from '@/lib/store';
 
 /* Reading is for the admin screens; the public pages read the store directly. */
@@ -28,7 +29,18 @@ type Action =
   | { action: 'delete-image'; id: string }
   | { action: 'set-enquiry'; id: string; status?: string; note?: string }
   | { action: 'delete-enquiry'; id: string }
-  | { action: 'set-contact'; contact: Partial<SiteContent['contact']> };
+  | { action: 'set-contact'; contact: Partial<SiteContent['contact']> }
+  | { action: 'add-project'; fields: Record<string, unknown> }
+  | { action: 'set-project'; id: string; fields: Record<string, unknown> }
+  | { action: 'move-project'; id: string; direction: 'up' | 'down' }
+  | { action: 'delete-project'; id: string }
+  | { action: 'set-impact'; id: string; value?: number; label?: string; note?: string };
+
+/* The vocabularies the public components switch on. A value outside them
+   would render as an unstyled badge or drop out of the tag filter entirely,
+   so both write paths check against these rather than trusting the form. */
+const STATUSES = ['Delivered', 'Ongoing', 'In construction', 'Committed'];
+const TAGS = ['Sanitation', 'Water', 'Infrastructure', 'Education', 'Environment'];
 
 export async function POST(request: Request) {
   if (!(await isAdmin())) {
@@ -170,6 +182,93 @@ export async function POST(request: Request) {
     case 'delete-enquiry':
       content.enquiries = content.enquiries.filter((e) => e.id !== body.id);
       break;
+
+    case 'add-project': {
+      const f = body.fields ?? {};
+      const title = clean(f.title, 90);
+      if (!title) {
+        return NextResponse.json({ error: 'title_required' }, { status: 400 });
+      }
+      /* No image and no provenance: a project entered here has no photograph
+         yet, and Projects.tsx already draws an adinkra in that case. Giving it
+         a stock picture would be the dishonest option, and claiming a
+         provenance it does not have would be worse. */
+      content.projects = [
+        ...content.projects,
+        {
+          id: newId(),
+          title,
+          tag: (typeof f.tag === 'string' && TAGS.includes(f.tag) ? f.tag : 'Infrastructure') as StoredProject['tag'],
+          status: (typeof f.status === 'string' && STATUSES.includes(f.status)
+            ? f.status
+            : 'Committed') as StoredProject['status'],
+          body: clean(f.body, 600),
+          figure: clean(f.figure, 24) || undefined,
+          glyph: 'nkyinkyim',
+        },
+      ];
+      break;
+    }
+
+    case 'set-project': {
+      const project = content.projects.find((p) => p.id === body.id);
+      if (!project) {
+        return NextResponse.json({ error: 'not_found' }, { status: 404 });
+      }
+      const f = body.fields ?? {};
+
+      if (typeof f.title === 'string') project.title = clean(f.title, 90);
+      if (typeof f.body === 'string') project.body = clean(f.body, 600);
+      if (typeof f.figure === 'string') {
+        const fig = clean(f.figure, 24);
+        project.figure = fig || undefined;
+      }
+      if (typeof f.status === 'string' && STATUSES.includes(f.status)) {
+        project.status = f.status as typeof project.status;
+      }
+      if (typeof f.tag === 'string' && TAGS.includes(f.tag)) {
+        project.tag = f.tag as typeof project.tag;
+      }
+      if (f.lens === 'regal' || f.lens === 'modern') project.lens = f.lens;
+      break;
+    }
+
+    case 'move-project': {
+      const i = content.projects.findIndex((p) => p.id === body.id);
+      if (i < 0) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+      const j = body.direction === 'up' ? i - 1 : i + 1;
+      if (j < 0 || j >= content.projects.length) break;
+      const next = [...content.projects];
+      [next[i], next[j]] = [next[j], next[i]];
+      content.projects = next;
+      break;
+    }
+
+    case 'delete-project': {
+      const going = content.projects.find((p) => p.id === body.id);
+      content.projects = content.projects.filter((p) => p.id !== body.id);
+      /* A project's photographs live in public/, not the blob store, so there
+         is no file to reclaim — only the record goes. */
+      void going;
+      break;
+    }
+
+    case 'set-impact': {
+      const stat = content.impact.find((i) => i.id === body.id);
+      if (!stat) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+      /* The projects tile is derived from the list on every render, so it is
+         not editable here: that is what stops it contradicting the record
+         printed beneath it, as it once did. */
+      if (stat.attribution === 'counted') {
+        return NextResponse.json({ error: 'derived_figure' }, { status: 400 });
+      }
+      if (typeof body.value === 'number' && Number.isFinite(body.value) && body.value >= 0) {
+        stat.value = Math.round(body.value * 10) / 10;
+      }
+      if (typeof body.label === 'string') stat.label = clean(body.label, 40);
+      if (typeof body.note === 'string') stat.note = clean(body.note, 80);
+      break;
+    }
 
     case 'set-contact': {
       /* The only write path that used to spread its input straight into the

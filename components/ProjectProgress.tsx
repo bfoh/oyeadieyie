@@ -1,5 +1,6 @@
 import Image from 'next/image';
-import { PROJECTS, PROVENANCE_LABEL } from '@/lib/content';
+import { PROVENANCE_LABEL } from '@/lib/content';
+import type { StoredProject } from '@/lib/store';
 import { Reveal } from './Reveal';
 
 /**
@@ -14,8 +15,8 @@ import { Reveal } from './Reveal';
  * labelled with its provenance, so a render is never mistaken for a building
  * that stands.
  */
-export function ProjectProgress() {
-  const sequences = PROJECTS.filter((p) => p.progress?.length);
+export function ProjectProgress({ projects }: { projects: StoredProject[] }) {
+  const sequences = projects.filter((p) => p.progress?.length);
   if (!sequences.length) return null;
 
   return (

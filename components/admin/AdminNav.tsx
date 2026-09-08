@@ -10,6 +10,7 @@ const LINKS = [
   { href: '/admin', label: 'Dashboard' },
   { href: '/admin/enquiries', label: 'Enquiries' },
   { href: '/admin/content', label: 'Manage the site' },
+  { href: '/admin/projects', label: 'Development record' },
   { href: '/admin/branding-hub', label: 'Branding hub' },
   { href: '/admin/checklist', label: 'Launch checklist' },
 ];
