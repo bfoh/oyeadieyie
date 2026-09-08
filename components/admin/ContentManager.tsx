@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { SiteContent } from '@/lib/store';
+import { WritingAssistant } from './WritingAssistant';
 
 /**
  * What the office can change without a developer.
@@ -190,6 +191,14 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
                 <textarea id="u-body" rows={5} className={`${input} mt-75 resize-y`} value={update.body} maxLength={2000}
                   onChange={(e) => setUpdate({ ...update, body: e.target.value })}
                   placeholder="A paragraph the town and the press can quote." />
+                <WritingAssistant
+                  kind="update"
+                  context={[update.title && `Title: ${update.title}`, update.date && `Date: ${update.date}`]
+                    .filter(Boolean)
+                    .join('\n')}
+                  placeholder="The borehole at the school was commissioned; the town now draws clean water"
+                  onDraft={(text) => setUpdate((u) => ({ ...u, body: text }))}
+                />
               </div>
               <button
                 type="button"
@@ -281,6 +290,14 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
                 <label className={label} htmlFor="e-body">Detail</label>
                 <textarea id="e-body" rows={4} className={`${input} mt-75 resize-y`} value={event.body} maxLength={1200}
                   onChange={(e) => setEvent({ ...event, body: e.target.value })} />
+                <WritingAssistant
+                  kind="event"
+                  context={[event.title && `Event: ${event.title}`, event.date && `Date: ${event.date}`, event.place && `Place: ${event.place}`]
+                    .filter(Boolean)
+                    .join('\n')}
+                  placeholder="Chiefs and queen mothers gather; the sanitation block will be handed to the town"
+                  onDraft={(text) => setEvent((ev) => ({ ...ev, body: text }))}
+                />
               </div>
               <button
                 type="button"

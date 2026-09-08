@@ -1,7 +1,7 @@
 'use client';
 
 import { GLYPHS } from '../adinkraGlyphs';
-import { BRAND, type BrandAsset } from '@/lib/brandAssets';
+import { BRAND, findPhoto, type BrandAsset } from '@/lib/brandAssets';
 
 /**
  * The artwork itself.
@@ -23,6 +23,35 @@ const EBONY = '#111111';
 const IVORY = '#F9F8F3';
 
 type Values = Record<string, string>;
+
+/**
+ * A photograph, drawn as a plain <img> at a fixed box.
+ *
+ * next/image is deliberately avoided here: these nodes are rasterised by
+ * html-to-image, which walks the DOM itself, and the optimiser's srcset and
+ * lazy loading only get in the way of that.
+ */
+function Photo({
+  id,
+  className,
+  style,
+}: {
+  id?: string;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  const photo = id ? findPhoto(id) : null;
+  if (!photo) return null;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={photo.src}
+      alt={photo.alt}
+      className={className}
+      style={{ objectFit: 'cover', display: 'block', ...style }}
+    />
+  );
+}
 
 function Glyph({
   id,
@@ -195,25 +224,47 @@ function CallingCard({ v }: { v: Values }) {
     );
   }
   return (
-    <div style={{ ...sheet(CREAM, INK), padding: 22, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', right: -18, bottom: -18, opacity: 0.06 }}>
-        <Glyph id="adinkrahene" size={120} color={GOLD} />
+    <div style={{ ...sheet(CREAM, INK), padding: 20, display: 'flex', gap: 16, position: 'relative', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', right: -18, bottom: -18, opacity: 0.05 }}>
+        <Glyph id="adinkrahene" size={110} color={GOLD} />
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-        <Crest size={22} color={GOLD} />
-        <span style={{ height: 14, width: 1, background: '#D8CFBB' }} />
-        <span style={{ fontSize: 7.5, letterSpacing: '0.18em', textTransform: 'uppercase', color: GOLD }}>
-          {BRAND.place}
-        </span>
-      </div>
-      <div style={{ position: 'relative' }}>
-        <div style={{ fontFamily: 'var(--font-display), Georgia, serif', fontSize: 15, lineHeight: 1.2, fontWeight: 600 }}>
-          {v.name || BRAND.chief}
+
+      {/* The portrait, ringed in gold: the mark of the office on a card that
+          is handed over in person. */}
+      {v.photo && (
+        <div style={{ flex: 'none', display: 'flex', alignItems: 'center' }}>
+          <div
+            style={{
+              width: 62,
+              height: 62,
+              borderRadius: '50%',
+              padding: 2,
+              border: `1.5px solid ${GOLD}`,
+              overflow: 'hidden',
+            }}
+          >
+            <Photo id={v.photo} style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
+          </div>
         </div>
-        <div style={{ marginTop: 5, fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: GOLD }}>
-          {v.style || BRAND.title}
+      )}
+
+      <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Crest size={18} color={GOLD} />
+          <span style={{ height: 12, width: 1, background: '#D8CFBB' }} />
+          <span style={{ fontSize: 7, letterSpacing: '0.16em', textTransform: 'uppercase', color: GOLD }}>
+            {BRAND.place}
+          </span>
         </div>
-        <div style={{ marginTop: 7, fontSize: 8, color: '#6B6455' }}>{v.line}</div>
+        <div>
+          <div style={{ fontFamily: 'var(--font-display), Georgia, serif', fontSize: 14, lineHeight: 1.2, fontWeight: 600 }}>
+            {v.name || BRAND.chief}
+          </div>
+          <div style={{ marginTop: 4, fontSize: 7.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: GOLD }}>
+            {v.style || BRAND.title}
+          </div>
+          <div style={{ marginTop: 6, fontSize: 7.5, lineHeight: 1.5, color: '#6B6455' }}>{v.line}</div>
+        </div>
       </div>
     </div>
   );
@@ -270,10 +321,28 @@ function Envelope({ v }: { v: Values }) {
 function DurbarInvitation({ v }: { v: Values }) {
   return (
     <div style={{ ...sheet(EBONY, IVORY), padding: 30, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+      {/* The chief behind the card. Held right back so the invitation still
+          reads as type first and a photograph second, which is what a formal
+          summons should do. */}
+      {v.photo && (
+        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+          <Photo id={v.photo} style={{ width: '100%', height: '100%', opacity: 0.3 }} />
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background:
+                'linear-gradient(180deg, rgba(17,17,17,0.94) 0%, rgba(17,17,17,0.72) 42%, rgba(17,17,17,0.95) 100%)',
+            }}
+          />
+        </div>
+      )}
       <div style={{ position: 'absolute', inset: 12, border: `1px solid ${GOLD_BRIGHT}`, opacity: 0.35, pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', left: '50%', top: 200, transform: 'translateX(-50%)', opacity: 0.05 }}>
-        <Glyph id="gyenyame" size={230} color={GOLD_BRIGHT} />
-      </div>
+      {!v.photo && (
+        <div style={{ position: 'absolute', left: '50%', top: 200, transform: 'translateX(-50%)', opacity: 0.05 }}>
+          <Glyph id="gyenyame" size={230} color={GOLD_BRIGHT} />
+        </div>
+      )}
 
       <div style={{ position: 'relative', paddingTop: 12 }}>
         <Crest size={34} color={GOLD_BRIGHT} />
@@ -429,8 +498,23 @@ function EmailSignature({ v }: { v: Values }) {
   const contact = v.contact || [BRAND.email, BRAND.phone].filter(Boolean).join('  ·  ');
   return (
     <div style={{ ...sheet(CREAM, INK), padding: 24, display: 'flex', alignItems: 'center', gap: 20 }}>
-      <div style={{ paddingRight: 20, borderRight: `1px solid ${GOLD}` }}>
-        <Crest size={52} color={GOLD} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, paddingRight: 20, borderRight: `1px solid ${GOLD}` }}>
+        {v.photo && (
+          <div
+            style={{
+              width: 66,
+              height: 66,
+              borderRadius: '50%',
+              padding: 2,
+              border: `1.5px solid ${GOLD}`,
+              overflow: 'hidden',
+              flex: 'none',
+            }}
+          >
+            <Photo id={v.photo} style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
+          </div>
+        )}
+        <Crest size={44} color={GOLD} />
       </div>
       <div>
         <div style={{ fontFamily: 'var(--font-display), Georgia, serif', fontSize: 17, fontWeight: 600 }}>
@@ -456,10 +540,28 @@ function EmailSignature({ v }: { v: Values }) {
 function QuoteCard({ v }: { v: Values }) {
   return (
     <div style={{ ...sheet(EBONY, IVORY), padding: 46, display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', right: -60, top: -60, opacity: 0.06 }}>
-        <Glyph id="akomantoso" size={300} color={GOLD_BRIGHT} />
-      </div>
-      <div style={{ position: 'relative' }}>
+      {/* The portrait holds the right of the square; the words sit clear of
+          it on the left, so neither fights the other. */}
+      {v.photo ? (
+        /* The photograph runs wider than the words need, and the scrim fades
+           across it, so the join never shows as a vertical seam. */
+        <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '64%' }}>
+          <Photo id={v.photo} style={{ width: '100%', height: '100%', objectPosition: '50% 22%' }} />
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background:
+                'linear-gradient(90deg, #111111 0%, #111111 26%, rgba(17,17,17,0.72) 52%, rgba(17,17,17,0.12) 100%)',
+            }}
+          />
+        </div>
+      ) : (
+        <div style={{ position: 'absolute', right: -60, top: -60, opacity: 0.06 }}>
+          <Glyph id="akomantoso" size={300} color={GOLD_BRIGHT} />
+        </div>
+      )}
+      <div style={{ position: 'relative', maxWidth: v.photo ? '60%' : '100%' }}>
         <Crest size={30} color={GOLD_BRIGHT} />
         <div
           style={{
@@ -486,17 +588,35 @@ function QuoteCard({ v }: { v: Values }) {
 function Announcement({ v }: { v: Values }) {
   return (
     <div style={{ ...sheet(EBONY, IVORY), padding: 44, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', right: -40, bottom: -70, opacity: 0.07 }}>
-        <Glyph id="nkyinkyim" size={280} color={GOLD_BRIGHT} />
-      </div>
+      {v.photo ? (
+        /* Full bleed, with the weight along the bottom rather than the left.
+           Both wide frames put the chief on the left of the picture, so a
+           side scrim would land the headline squarely on his face. */
+        <div style={{ position: 'absolute', inset: 0 }}>
+          <Photo id={v.photo} style={{ width: '100%', height: '100%', objectPosition: '50% 30%' }} />
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background:
+                'linear-gradient(180deg, rgba(17,17,17,0.82) 0%, rgba(17,17,17,0.35) 30%, rgba(17,17,17,0.88) 68%, #111111 100%)',
+            }}
+          />
+        </div>
+      ) : (
+        <div style={{ position: 'absolute', right: -40, bottom: -70, opacity: 0.07 }}>
+          <Glyph id="nkyinkyim" size={280} color={GOLD_BRIGHT} />
+        </div>
+      )}
       <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12 }}>
         <Crest size={26} color={GOLD_BRIGHT} />
         <span style={{ fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: GOLD_BRIGHT }}>
           {v.kicker}
         </span>
       </div>
-      <div style={{ position: 'relative' }}>
-        <div style={{ fontFamily: 'var(--font-display), Georgia, serif', fontSize: 34, lineHeight: 1.14, fontWeight: 600, maxWidth: '84%' }}>
+      {/* Pushed into the lower band so the faces above stay clear. */}
+      <div style={{ position: 'relative', marginTop: 'auto' }}>
+        <div style={{ fontFamily: 'var(--font-display), Georgia, serif', fontSize: 32, lineHeight: 1.14, fontWeight: 600, maxWidth: '82%' }}>
           {v.headline}
         </div>
         {v.detail && (
@@ -526,11 +646,28 @@ function PressHeader({ v }: { v: Values }) {
             </div>
           </div>
         </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ display: 'inline-block', border: `1px solid ${INK}`, padding: '5px 10px', fontSize: 8.5, letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 700 }}>
-            {v.status}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ display: 'inline-block', border: `1px solid ${INK}`, padding: '5px 10px', fontSize: 8.5, letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 700 }}>
+              {v.status}
+            </div>
+            <div style={{ marginTop: 7, fontSize: 9, color: '#6B6455' }}>{formatDate(v.date)}</div>
           </div>
-          <div style={{ marginTop: 7, fontSize: 9, color: '#6B6455' }}>{formatDate(v.date)}</div>
+          {v.photo && (
+            <div
+              style={{
+                width: 58,
+                height: 58,
+                borderRadius: '50%',
+                padding: 2,
+                border: `1.5px solid ${GOLD}`,
+                overflow: 'hidden',
+                flex: 'none',
+              }}
+            >
+              <Photo id={v.photo} style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
+            </div>
+          )}
         </div>
       </div>
       <div style={{ paddingTop: 22, flex: 1 }}>

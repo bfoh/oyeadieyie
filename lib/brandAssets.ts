@@ -13,7 +13,83 @@ import { CHIEF, COMPANY, CONTACT, contactValue } from './content';
  * palette, the adinkra and the forms of address are this office's own.
  */
 
-export type FieldType = 'text' | 'textarea' | 'date' | 'select' | 'image';
+export type FieldType = 'text' | 'textarea' | 'date' | 'select' | 'photo';
+
+/**
+ * The photographs cleared for brand use.
+ *
+ * A short, curated set rather than the whole gallery: these are the frames
+ * that carry the office well at small sizes and in print. Each says which
+ * shape it is cut for, so the picker never offers a wide banner where a
+ * portrait belongs.
+ */
+export type BrandPhoto = {
+  id: string;
+  src: string;
+  label: string;
+  alt: string;
+  shape: 'portrait' | 'head' | 'wide';
+};
+
+export const BRAND_PHOTOS: BrandPhoto[] = [
+  {
+    id: 'regalia',
+    src: '/img/brand/portrait-regalia.jpg',
+    label: 'In kente',
+    alt: 'Nana Oyeadieyie Barima Essoun I in green and gold kente with gold bracelets',
+    shape: 'portrait',
+  },
+  {
+    id: 'durbar',
+    src: '/img/brand/portrait-durbar.jpg',
+    label: 'Beneath the umbrella',
+    alt: 'Nana Oyeadieyie Barima Essoun I in black and gold adinkra cloth beneath the royal umbrella',
+    shape: 'portrait',
+  },
+  {
+    id: 'office',
+    src: '/img/brand/portrait-office.jpg',
+    label: 'At the office',
+    alt: 'Nana Oyeadieyie Barima Essoun I standing at his desk in black dress and red cap',
+    shape: 'portrait',
+  },
+  {
+    id: 'head-office',
+    src: '/img/brand/head-office.jpg',
+    label: 'Headshot, business dress',
+    alt: 'Portrait of Nana Oyeadieyie Barima Essoun I in a red cap',
+    shape: 'head',
+  },
+  {
+    id: 'head-regalia',
+    src: '/img/brand/head-regalia.jpg',
+    label: 'Headshot, in kente',
+    alt: 'Portrait of Nana Oyeadieyie Barima Essoun I in kente',
+    shape: 'head',
+  },
+  {
+    id: 'court',
+    src: '/img/brand/wide-court.jpg',
+    label: 'The court seated',
+    alt: 'Nana Oyeadieyie Barima Essoun I seated with a senior chief in adinkra cloth',
+    shape: 'wide',
+  },
+  {
+    id: 'procession',
+    src: '/img/brand/wide-durbar.jpg',
+    label: 'The procession',
+    alt: 'Procession beneath the royal umbrella at Adrobaa',
+    shape: 'wide',
+  },
+];
+
+export function photosOfShape(shape: BrandPhoto['shape']) {
+  return BRAND_PHOTOS.filter((p) => p.shape === shape);
+}
+
+export function findPhoto(id: string): BrandPhoto | null {
+  return BRAND_PHOTOS.find((p) => p.id === id) ?? null;
+}
 
 export type AssetField = {
   key: string;
@@ -118,6 +194,7 @@ export const BRAND_ASSETS: BrandAsset[] = [
       { key: 'style', label: 'Style of address', type: 'text', default: CHIEF.title, max: 40 },
       { key: 'line', label: 'Second line', type: 'text', default: `${COMPANY.name}, ${COMPANY.group.replace(/^A member/, 'a member')}`, max: 52 },
       { key: 'side', label: 'Face', type: 'select', options: ['Front', 'Reverse'], default: 'Front' },
+      { key: 'photo', label: 'Portrait', type: 'photo', default: 'head-regalia', help: 'Shown on the front, framed in gold.' },
     ],
   },
   {
@@ -160,6 +237,7 @@ export const BRAND_ASSETS: BrandAsset[] = [
       { key: 'time', label: 'Time', type: 'text', default: '10:00 prompt', max: 24 },
       { key: 'venue', label: 'Venue', type: 'text', default: 'The durbar ground, Adrobaa', max: 46 },
       { key: 'dress', label: 'Dress', type: 'text', default: 'Traditional cloth', max: 34 },
+      { key: 'photo', label: 'Portrait', type: 'photo', default: 'durbar', help: 'Set behind the card, quietened so the type stays first.' },
     ],
   },
   {
@@ -225,6 +303,7 @@ export const BRAND_ASSETS: BrandAsset[] = [
       NAME_FIELD,
       { key: 'style', label: 'Style of address', type: 'text', default: `${CHIEF.title}, the ${CHIEF.titleMeaning}`, max: 52 },
       { key: 'contact', label: 'Contact line', type: 'text', placeholder: 'Filled from the office details when supplied', max: 60 },
+      { key: 'photo', label: 'Portrait', type: 'photo', default: 'head-office', help: 'A small round portrait beside the crest.' },
     ],
   },
   {
@@ -244,6 +323,7 @@ export const BRAND_ASSETS: BrandAsset[] = [
         help: 'His own words. Do not paraphrase the motto.',
       },
       { key: 'attribution', label: 'Attribution', type: 'text', default: `${CHIEF.fullName}, ${CHIEF.title}`, max: 56 },
+      { key: 'photo', label: 'Portrait', type: 'photo', default: 'regalia', help: 'Fills the right of the card.' },
     ],
   },
   {
@@ -257,6 +337,7 @@ export const BRAND_ASSETS: BrandAsset[] = [
       { key: 'kicker', label: 'Kicker', type: 'text', default: 'From the office', max: 26 },
       { key: 'headline', label: 'Headline', type: 'text', default: 'Commissioning of the sanitation facility', max: 62 },
       { key: 'detail', label: 'Detail line', type: 'text', placeholder: 'Adrobaa · 14 March 2026 · 10:00', max: 52 },
+      { key: 'photo', label: 'Photograph', type: 'photo', default: 'court', help: 'Fills the card; the type sits in a band along the bottom.' },
     ],
   },
   {
@@ -270,6 +351,7 @@ export const BRAND_ASSETS: BrandAsset[] = [
       { key: 'status', label: 'Release status', type: 'select', options: ['For immediate release', 'Embargoed'], default: 'For immediate release' },
       { key: 'headline', label: 'Headline', type: 'text', default: 'Nkosuo Hene opens sanitation facility at Adrobaa', max: 68 },
       { key: 'date', label: 'Date', type: 'date' },
+      { key: 'photo', label: 'Portrait', type: 'photo', default: 'head-office', help: 'Sits at the right of the banner.' },
     ],
   },
 ];

@@ -4,12 +4,15 @@ import { useMemo, useRef, useState } from 'react';
 import {
   ASSET_CATEGORIES,
   BRAND_ASSETS,
+  BRAND_PHOTOS,
   assetFilename,
   assetsByCategory,
   defaultValues,
+  findPhoto,
   type BrandAsset,
 } from '@/lib/brandAssets';
 import { AssetPreview } from './AssetPreview';
+import { WritingAssistant } from './WritingAssistant';
 
 /**
  * The branding hub.
@@ -244,6 +247,44 @@ export function BrandingHub() {
                         </option>
                       ))}
                     </select>
+                  ) : field.type === 'photo' ? (
+                    /* A picker rather than an upload: these are the frames
+                       cleared for brand use, cut for the shape each asset
+                       needs. "None" is a real option, because a formal sheet
+                       often reads better without a face on it. */
+                    <div className="mt-100 grid grid-cols-4 gap-75">
+                      <button
+                        type="button"
+                        onClick={() => setValues((v) => ({ ...v, [field.key]: '' }))}
+                        aria-pressed={!value}
+                        className={[
+                          'flex aspect-square items-center justify-center rounded-lg border text-xs font-semibold transition-all',
+                          !value ? 'border-gold text-gold' : 'border-white/10 text-ivory/45 hover:border-white/25',
+                        ].join(' ')}
+                      >
+                        None
+                      </button>
+                      {BRAND_PHOTOS.map((p) => {
+                        const selected = value === p.id;
+                        return (
+                          <button
+                            key={p.id}
+                            type="button"
+                            title={p.label}
+                            onClick={() => setValues((v) => ({ ...v, [field.key]: p.id }))}
+                            aria-pressed={selected}
+                            aria-label={p.label}
+                            className={[
+                              'overflow-hidden rounded-lg border transition-all',
+                              selected ? 'border-gold ring-1 ring-gold' : 'border-white/10 hover:border-white/30',
+                            ].join(' ')}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={p.src} alt="" className="aspect-square w-full object-cover" />
+                          </button>
+                        );
+                      })}
+                    </div>
                   ) : (
                     <input
                       id={id}
@@ -254,6 +295,21 @@ export function BrandingHub() {
                       onChange={(e) => setValues((v) => ({ ...v, [field.key]: e.target.value }))}
                       className={`${common} mt-75`}
                     />
+                  )}
+                  {(field.type === 'textarea' ||
+                    ['headline', 'occasion', 'project', 'note', 'reason'].includes(field.key)) && (
+                    <WritingAssistant
+                      kind={asset.id}
+                      context={asset.fields
+                        .filter((f) => f.key !== field.key && values[f.key] && f.type !== 'photo')
+                        .map((f) => `${f.label}: ${values[f.key]}`)
+                        .join('\n')}
+                      placeholder="A borehole was commissioned at Adrobaa on the 14th, funded by the stool"
+                      onDraft={(text) => setValues((v) => ({ ...v, [field.key]: text }))}
+                    />
+                  )}
+                  {field.type === 'photo' && value && (
+                    <p className="mt-75 text-xs text-ivory/50">{findPhoto(value)?.label}</p>
                   )}
                   {field.help && <p className="mt-50 text-xs leading-relaxed text-ivory/40">{field.help}</p>}
                 </div>

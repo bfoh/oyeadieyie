@@ -446,6 +446,36 @@ compliment slip, envelope, durbar invitation, citation, project signboard,
 order of proceedings, email signature, quote card, announcement card and
 press release header.
 
+**Photography.** `BRAND_PHOTOS` in `lib/brandAssets.ts` is a short curated set
+cut for three shapes — portrait, head and wide — and stored in
+`public/img/brand/`. Six assets carry one: the calling card and the email
+signature ring a headshot in gold, the invitation sets a portrait behind the
+type at low opacity, the quote card gives the chief the right-hand two thirds,
+the announcement runs full bleed with the type banded along the bottom, and the
+press header puts a headshot beside the release status. Every one can be
+switched or set to None from the editor, because a formal sheet often reads
+better without a face on it.
+
+Two things learned cutting them: a side scrim puts the headline on the chief's
+face, since both wide frames place him on the left, hence the bottom band on
+the announcement; and a photograph that stops halfway across a card shows as a
+vertical seam unless the scrim fades *across* it rather than ending with it.
+
+**The writing assistant.** `POST /api/admin/assist` drafts wording for a field
+through the Vercel AI Gateway, in the office's register: British spelling, the
+correct style of address, no marketing language, and nothing claimed that was
+not supplied. It writes into the field and stops there — the office edits and
+approves before anything prints. Nothing it produces reaches the public site or
+a downloaded file without a person pressing a button.
+
+On Vercel the gateway authenticates from the deployment's OIDC token, so no key
+is needed in production; locally set `AI_GATEWAY_API_KEY`. When it is not
+configured the button says so rather than failing silently.
+
+Note for anyone reading the reference site: the purple **AI** badge on Matrix's
+branding hub is the Adobe Illustrator file format, sitting beside PNG and PDF.
+It is not an assistant. This one is a deliberate addition.
+
 Three things worth keeping:
 
 - **Paper prints dark ink on cream, not the site's ebony.** A letterhead that
