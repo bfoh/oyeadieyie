@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Playfair_Display, Plus_Jakarta_Sans, Cinzel } from 'next/font/google';
+import { Playfair_Display, Plus_Jakarta_Sans, Bodoni_Moda } from 'next/font/google';
 import { SITE } from '@/lib/site';
 import './globals.css';
 
@@ -13,15 +13,22 @@ const display = Playfair_Display({
 /**
  * The wordmark.
  *
- * Cinzel is drawn from Roman inscriptional capitals, the lettering cut into
- * monuments and public buildings. It is built for capitals rather than
- * merely tolerating them, which is what a name set in caps needs, and it
- * carries authority without ornament. Used for the wordmark alone; Playfair
- * still sets the headings.
+ * Bodoni Moda, a didone: thick vertical stems against razor-thin horizontal
+ * hairlines. It is the closest freely licensed relative of Didot, which is
+ * not on Google Fonts, and it carries the same aristocratic register.
+ *
+ * Didones are drawn for display sizes, where the hairlines have room to be
+ * thin. At wordmark size they need weight and a little tracking or the thin
+ * strokes drop out on a phone screen, which is why this is set at 700 rather
+ * than 400.
+ *
+ * Playfair still sets the headings — the same family of forms, one step less
+ * severe, so the wordmark reads as the sharper voice of the same house.
  */
-const wordmark = Cinzel({
+const wordmark = Bodoni_Moda({
   subsets: ['latin'],
-  weight: ['400', '600', '700'],
+  weight: ['500', '600', '700'],
+  style: ['normal'],
   variable: '--font-wordmark',
   display: 'swap',
 });

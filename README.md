@@ -298,12 +298,21 @@ Defined in `tailwind.config.ts` and `app/globals.css`.
 
 Three faces, each with one job:
 
-- **Cinzel** sets the wordmark alone, in capitals. It is drawn from Roman
-  inscriptional lettering — the forms cut into monuments and public buildings
-  — so a name set in caps reads as an inscription rather than as shouting. It
-  is the freely licensed relative of Trajan.
-- **Playfair Display** sets the headings.
+- **Bodoni Moda** sets the wordmark alone, in capitals. A didone: thick
+  vertical stems against razor-thin horizontal hairlines. It is the closest
+  freely licensed relative of Didot, which is not on Google Fonts.
+- **Playfair Display** sets the headings — the same high-contrast family of
+  forms, one step less severe, so the wordmark reads as the sharper voice of
+  the same house.
 - **Plus Jakarta Sans** sets everything else.
+
+Didones are drawn for display sizes, where their hairlines have room to be
+thin. The wordmark is set at 700 rather than 400 for exactly this reason: at
+13px, and 10.5px on a phone, the thin strokes of a lighter weight break up on
+screen. Do not lighten it without checking it on a phone.
+
+`next/font` rejects the `axes` option whenever an explicit `weight` is given,
+so the optical size axis cannot be pinned here. Weight carries it instead.
 
 **Numeric font weights are declared in `tailwind.config.ts`.** The components
 have always written `font-500`, `font-600` and `font-700`, but Tailwind ships
