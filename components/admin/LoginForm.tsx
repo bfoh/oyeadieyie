@@ -28,7 +28,9 @@ export function LoginForm({ configured }: { configured: boolean }) {
       setError(
         data.error === 'not_configured'
           ? 'No admin password is set on this deployment yet.'
-          : 'That password is not right.',
+          : data.error === 'too_many_attempts'
+            ? 'Too many attempts. Wait a quarter of an hour and try again.'
+            : 'That password is not right.',
       );
     } catch {
       setError('Could not reach the server. Try again.');

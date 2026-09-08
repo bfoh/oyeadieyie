@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import { UPDATES_INTRO, formatUpdateDate, type Update } from '@/lib/content';
 import { Reveal } from './Reveal';
+import { HOME_LIMITS } from '@/lib/limits';
 
 /**
  * Dated entries from the office.
@@ -19,7 +20,7 @@ export function Updates({ updates }: { updates: Update[] }) {
 
   const shown = [...updates]
     .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, 3);
+    .slice(0, HOME_LIMITS.updates);
 
   return (
     <section

@@ -11,16 +11,6 @@ import {
 } from '@/lib/store';
 
 /* Reading is for the admin screens; the public pages read the store directly. */
-export async function GET() {
-  if (!(await isAdmin())) {
-    return NextResponse.json({ error: 'unauthorised' }, { status: 401 });
-  }
-  return NextResponse.json({
-    content: await readContent({ fresh: true }),
-    configured: storeConfigured(),
-  });
-}
-
 type Action =
   | { action: 'add-update'; update: { title: string; date: string; body: string; image?: string; alt?: string } }
   | { action: 'delete-update'; id: string }

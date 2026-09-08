@@ -5,6 +5,7 @@ import type { SiteContent } from '@/lib/store';
 import { WritingAssistant } from './WritingAssistant';
 import { AttachPhoto } from './AttachPhoto';
 import { formatBytes, resizeImage } from '@/lib/resizeImage';
+import { HOME_LIMITS } from '@/lib/limits';
 
 /**
  * What the office can change without a developer.
@@ -45,6 +46,25 @@ const primary =
 const quiet =
   'rounded-lg border border-white/15 px-100 py-50 text-xs font-semibold text-ivory/70 transition-colors hover:border-crimson hover:text-crimson';
 
+/**
+ * What the home page will not have room for.
+ *
+ * Nothing is deleted when a list outgrows its section — the entries stay here
+ * and stay in the store — but there is no archive page for them to fall back
+ * to, so they simply stop being public. Saying which ones, by name, is the
+ * least the admin owes the person who posted them.
+ */
+function Overflow({ shown, total, what }: { shown: number; total: number; what: string }) {
+  if (total <= shown) return null;
+  return (
+    <p className="mt-200 rounded-xl border border-gold/30 bg-gold/5 p-200 text-sm leading-relaxed text-gold">
+      The home page has room for {shown} {what}. The {total - shown} marked
+      below are kept here but are not on the public site. Delete one of the {shown}
+      {' '}above them to bring another through.
+    </p>
+  );
+}
+
 export function ContentManager({ initial, configured }: { initial: SiteContent; configured: boolean }) {
   const [tab, setTab] = useState<Tab>('updates');
   const [content, setContent] = useState<SiteContent>(initial);
@@ -64,6 +84,13 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
   const [contact, setContact] = useState(initial.contact);
 
   useEffect(() => setContact(initial.contact), [initial.contact]);
+
+  /* The public calendar shows only what is still ahead, soonest first, so a
+     past event is not competing for one of the four places. */
+  const today = new Date().toISOString().slice(0, 10);
+  const upcomingEvents = [...content.events]
+    .filter((e) => e.date >= today)
+    .sort((a, b) => a.date.localeCompare(b.date));
 
   async function send(body: unknown, success: string) {
     setBusy(true);
@@ -238,14 +265,23 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
             <h2 className="font-display text-2xl font-600 text-ivory">
               Published <span className="text-ivory/40">({content.updates.length})</span>
             </h2>
+            <Overflow shown={HOME_LIMITS.updates} total={content.updates.length} what="updates" />
             {content.updates.length === 0 ? (
               <p className="mt-200 text-sm text-ivory/55">
                 Nothing posted yet, so the updates section does not appear on the site at all.
               </p>
             ) : (
               <ul className="mt-200 grid gap-200">
-                {content.updates.map((u) => (
-                  <li key={u.id} className="rounded-2xl border border-white/10 bg-ebony-raised p-300">
+                {[...content.updates]
+                  .sort((a, b) => b.date.localeCompare(a.date))
+                  .map((u, i) => (
+                  <li
+                    key={u.id}
+                    className={[
+                      'rounded-2xl border bg-ebony-raised p-300',
+                      i < HOME_LIMITS.updates ? 'border-white/10' : 'border-dashed border-gold/30 opacity-70',
+                    ].join(' ')}
+                  >
                     <div className="flex items-start justify-between gap-200">
                       <div className="flex gap-200">
                         {u.image && (
@@ -351,6 +387,7 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
             <h2 className="font-display text-2xl font-600 text-ivory">
               In the calendar <span className="text-ivory/40">({content.events.length})</span>
             </h2>
+            <Overflow shown={HOME_LIMITS.events} total={upcomingEvents.length} what="events ahead" />
             {content.events.length === 0 ? (
               <p className="mt-200 text-sm text-ivory/55">
                 No events yet, so the calendar section does not appear on the site.
@@ -358,9 +395,20 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
             ) : (
               <ul className="mt-200 grid gap-200">
                 {content.events.map((ev) => {
-                  const past = ev.date < new Date().toISOString().slice(0, 10);
+                  const past = ev.date < today;
+                  /* Beyond the fourth event still ahead: kept, but off the
+                     public calendar until one before it passes or is removed. */
+                  const beyond =
+                    !past &&
+                    upcomingEvents.findIndex((e) => e.id === ev.id) >= HOME_LIMITS.events;
                   return (
-                    <li key={ev.id} className="rounded-2xl border border-white/10 bg-ebony-raised p-300">
+                    <li
+                      key={ev.id}
+                      className={[
+                        'rounded-2xl border bg-ebony-raised p-300',
+                        beyond ? 'border-dashed border-gold/30 opacity-70' : 'border-white/10',
+                      ].join(' ')}
+                    >
                       <div className="flex items-start justify-between gap-200">
                         <div>
                           <div className="flex flex-wrap items-center gap-100">
@@ -433,9 +481,16 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
           <h2 className="mt-500 font-display text-2xl font-600 text-ivory">
             In the gallery <span className="text-ivory/40">({content.gallery.length})</span>
           </h2>
+          <Overflow shown={HOME_LIMITS.gallery} total={content.gallery.length} what="photographs" />
           <ul className="mt-200 grid grid-cols-2 gap-200 md:grid-cols-3 xl:grid-cols-4">
-            {content.gallery.map((g) => (
-              <li key={g.id} className="overflow-hidden rounded-2xl border border-white/10 bg-ebony-raised">
+            {content.gallery.map((g, i) => (
+              <li
+                key={g.id}
+                className={[
+                  'overflow-hidden rounded-2xl border bg-ebony-raised',
+                  i < HOME_LIMITS.gallery ? 'border-white/10' : 'border-dashed border-gold/30 opacity-70',
+                ].join(' ')}
+              >
                 <div className="relative aspect-[3/4] w-full bg-black/40">
                   {/* A plain img: these are arbitrary blob URLs, and the
                       optimiser would need every host allow-listed. */}

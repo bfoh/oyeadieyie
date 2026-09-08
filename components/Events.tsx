@@ -2,6 +2,7 @@ import Image from 'next/image';
 import type { SiteEvent } from '@/lib/store';
 import { parseISODate } from '@/lib/content';
 import { Reveal } from './Reveal';
+import { HOME_LIMITS } from '@/lib/limits';
 
 /**
  * The calendar.
@@ -28,7 +29,7 @@ export function Events({ events }: { events: SiteEvent[] }) {
   const upcoming = events
     .filter((e) => parseISODate(e.date) !== null && e.date >= today)
     .sort((a, b) => a.date.localeCompare(b.date))
-    .slice(0, 4);
+    .slice(0, HOME_LIMITS.events);
 
   if (!upcoming.length) return null;
 

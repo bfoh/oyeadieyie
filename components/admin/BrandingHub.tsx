@@ -6,6 +6,7 @@ import {
   BRAND,
   BRAND_ASSETS,
   BRAND_PHOTOS,
+  photosOfShape,
   assetFilename,
   assetsByCategory,
   defaultValues,
@@ -288,6 +289,13 @@ export function BrandingHub() {
                 style={{
                   width: size.w,
                   height: size.h,
+                  /* The sheet is a fixed canvas. Without this, text longer
+                     than the design allows runs on past the paper's edge and
+                     is drawn in the preview but cut from the exported file —
+                     so the office would send a letter whose last paragraph is
+                     visible here and missing from the PDF. Clipping it here
+                     means what is on screen is what is in the file. */
+                  overflow: 'hidden',
                   transform: `scale(${editorScale(size, stageWidth)})`,
                   transformOrigin: 'top left',
                   boxShadow: '0 24px 70px rgba(0,0,0,0.6)',
@@ -370,7 +378,10 @@ export function BrandingHub() {
                       >
                         None
                       </button>
-                      {BRAND_PHOTOS.map((p) => {
+                      {(field.shapes
+                        ? field.shapes.flatMap(photosOfShape)
+                        : BRAND_PHOTOS
+                      ).map((p) => {
                         const selected = value === p.id;
                         return (
                           <button
@@ -411,7 +422,16 @@ export function BrandingHub() {
                         .map((f) => `${f.label}: ${values[f.key]}`)
                         .join('\n')}
                       placeholder="A borehole was commissioned at Adrobaa on the 14th, funded by the stool"
-                      onDraft={(text) => setValues((v) => ({ ...v, [field.key]: text }))}
+                      /* maxLength only governs typing: a draft written here
+                         goes into state programmatically and would sail past
+                         it, then spill off the fixed sheet and out of the
+                         exported file without a word of warning. */
+                      onDraft={(text) =>
+                        setValues((v) => ({
+                          ...v,
+                          [field.key]: field.max ? text.slice(0, field.max) : text,
+                        }))
+                      }
                     />
                   )}
                   {field.type === 'photo' && value && (

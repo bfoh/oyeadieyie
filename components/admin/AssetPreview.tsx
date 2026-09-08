@@ -720,7 +720,3 @@ export function AssetPreview({
   if (!Renderer) return null;
   return <Renderer v={values} />;
 }
-
-export function hasRenderer(id: string) {
-  return Boolean(RENDERERS[id]);
-}

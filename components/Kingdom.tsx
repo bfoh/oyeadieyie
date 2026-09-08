@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useState } from 'react';
 import { TIMELINE, CHIEF } from '@/lib/content';
 import { Reveal } from './Reveal';
+import { HOME_LIMITS } from '@/lib/limits';
 
 export function Kingdom({ gallery }: { gallery: { id: string; url: string; alt: string }[] }) {
   const [activeId, setActiveId] = useState(TIMELINE[0].id);
@@ -102,7 +103,7 @@ export function Kingdom({ gallery }: { gallery: { id: string; url: string; alt: 
           </h3>
         </Reveal>
         <ul data-reveal-group className="mt-300 grid grid-cols-2 gap-200 md:grid-cols-3">
-          {gallery.slice(0, 9).map((shot, i) => (
+          {gallery.slice(0, HOME_LIMITS.gallery).map((shot, i) => (
             <Reveal as="li" item key={shot.id} delay={i * 60}>
               <div className="group relative aspect-[3/4] w-full overflow-hidden rounded-2xl border border-ebony-line bg-ebony-card">
                 <Image

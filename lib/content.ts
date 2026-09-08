@@ -654,28 +654,24 @@ export const ENGAGE_ROUTES = [
     id: 'appearance',
     title: 'Appearance and bookings',
     body: 'Conferences, launches, panels, durbars and state occasions.',
-    cta: 'Request an appearance',
     primary: true,
   },
   {
     id: 'partnership',
     title: 'Partnership and investment',
     body: 'Corporate partners funding development work in Adrobaa and the wider Ahafo Region.',
-    cta: 'Open a partnership conversation',
     primary: false,
   },
   {
     id: 'diaspora',
     title: 'Diaspora support',
     body: 'For Ghanaians abroad contributing to named projects in the town.',
-    cta: 'Support a project',
     primary: false,
   },
   {
     id: 'protocol',
     title: 'Protocol and courtesy calls',
     body: 'Formal visits to the palace, courtesy calls and traditional council matters.',
-    cta: 'Request protocol guidance',
     primary: false,
   },
 ];
@@ -712,23 +708,6 @@ export function contactValue(
 ): string | null {
   const v = CONTACT[key];
   return isSupplied(v) ? v : null;
-}
-
-/** Digits only, as wa.me expects. Null until the number is supplied. */
-export function whatsappHref(message?: string): string | null {
-  const n = contactValue('whatsapp');
-  if (!n) return null;
-  const digits = n.replace(/\D/g, '');
-  if (!digits) return null;
-  return message
-    ? `https://wa.me/${digits}?text=${encodeURIComponent(message)}`
-    : `https://wa.me/${digits}`;
-}
-
-/** Null until the number is supplied, so the link is never rendered empty. */
-export function telHref(): string | null {
-  const n = contactValue('phone');
-  return n ? `tel:${n.replace(/[^\d+]/g, '')}` : null;
 }
 
 /* ---------------------------------------------------------------

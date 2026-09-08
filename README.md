@@ -2,7 +2,9 @@
 
 Official site for the Nkosuo Hene of Adrobaa, Tano North, Ahafo Region, Ghana.
 
-Next.js 15, Tailwind, TypeScript. No CMS: all copy and data live in one file.
+Next.js 15, Tailwind, TypeScript. No database: the copy the office changes
+lives in a versioned JSON document in Vercel Blob, edited from `/admin`, and
+everything the office does not change is compiled in from `lib/content.ts`.
 
 ```bash
 npm install
@@ -12,16 +14,33 @@ npm run build && npm start
 
 ## Where the content lives
 
-Everything editable is in **`lib/content.ts`**. Change copy there, not in the
-components.
+Two places, and the split matters.
+
+**The store** — a JSON document in Vercel Blob, edited at `/admin` and read by
+`readContent()` in `lib/store.ts`. It holds the updates, the events, the
+gallery, the contact details, the enquiries the public form captures, and the
+development record (projects and impact figures). The office changes these
+without a developer, and the public site follows within about half a minute.
+
+**`lib/content.ts`** — the biography, the FAQ, the adinkra, the pillars, the
+engagement routes, the press photography. These change rarely and should go
+through review, so they stay in the repository.
+
+`lib/content.ts` also holds the **seed** for everything in the store: on a
+deployment with no store connected, or before the office has ever saved,
+`baseContent()` returns those constants and the site renders exactly as it
+would have before there was an admin. So the constants are the fallback, never
+dead weight — but once the office has saved, editing them in the repository
+changes nothing on the live site. Edit at `/admin` instead.
 
 ## What still needs real information
 
 These are deliberately bracketed. Nothing was invented, because false claims on
 an official chief's site are worse than blanks. **Nothing bracketed is ever
-printed**: every read goes through `contactValue()` in `lib/content.ts`, which
+printed**: every read goes through `isSupplied()` in `lib/content.ts`, which
 returns null for an unsupplied value, and the line, link or whole panel is
-omitted instead.
+omitted instead. The office can fill these in at `/admin/content` without a
+deploy; the brackets below are what a fresh deployment starts with.
 
 | Where | Placeholder | Needs |
 |---|---|---|
@@ -30,7 +49,7 @@ omitted instead.
 | `CONTACT.press` | `[PRESS EMAIL]` | Press desk address |
 | `CONTACT.whatsapp` | `[WHATSAPP NUMBER]` | International format, `233XXXXXXXXX`. Supplying it makes the WhatsApp route appear beside the form and in the footer. |
 | `lib/site.ts` | `SITE` | The real domain, for canonical, sitemap and Open Graph URLs. Override with `NEXT_PUBLIC_SITE_URL`. |
-| `IMPACT` | investment, reach, communities | Figures the traditional council can produce if a journalist asks |
+| Impact figures | investment, reach, communities | Figures the traditional council can produce if a journalist asks. Set them at `/admin/projects`; the projects count is derived from the list and cannot be typed in. |
 
 ### The engagement form
 
@@ -62,8 +81,9 @@ addresses and organisations.
 
 ## Content from the chief
 
-`PROJECTS`, `PILLARS` and `TAGLINE` in `lib/content.ts` now come from the
-chief's own message, not from inference. Spelling was corrected for
+`PROJECTS`, `PILLARS` and `TAGLINE` in `lib/content.ts` come from the chief's
+own message, not from inference. `PROJECTS` now seeds the store and is edited
+at `/admin/projects`; the other two are still edited here. Spelling was corrected for
 publication (commmunities, machenize, brient); nothing else was changed.
 
 `CHIEF.motto` is his line verbatim: **Development for the People, By the
@@ -81,7 +101,10 @@ Committed. Ask him which are actually complete.
 Three cards — street lights, scholarships, tree planting — carry generated
 illustrations, because no photograph of that work exists anywhere in the
 source material. Each is marked **Illustration** on the card and flagged
-`provenance: 'illustration'` in `lib/content.ts`. They show objects and places
+`provenance: 'illustration'`. That flag is shown but never editable in the
+admin — the office can move a project to Delivered, which is its own record to
+keep, but it cannot relabel a picture as something it is not. They show
+objects and places
 only, never people: a picture of a person on a development record implies a
 real beneficiary, and these are not photographs of anyone.
 
@@ -110,8 +133,8 @@ a reader is looking at a building or a drawing of one.
 
 ### Renders become buildings
 
-`components/ProjectProgress.tsx` renders the `progress` sequences declared in
-`lib/content.ts`: render → foundation trenches → footprint → blockwork for the
+`components/ProjectProgress.tsx` renders the `progress` sequences carried on
+the project records: render → foundation trenches → footprint → blockwork for the
 sanitation block, and rig → casing → first water for the boreholes. Every one
 of these photographs was already in `public/img`, referenced by nothing, while
 the section headline promised exactly this sequence. Captions describe only
@@ -441,16 +464,24 @@ absent from the sitemap.
 
 ### Managing the site
 
-`/admin/content` edits the parts of the site the office changes often:
-updates, events, gallery photographs and the contact details. Everything else
-— the projects, the adinkra, the biography, the FAQ — stays in
-`lib/content.ts`, because that is the record rather than the noticeboard and
-it should go through review.
+`/admin/content` edits the noticeboard: updates, events, gallery photographs
+and the contact details. `/admin/projects` edits the development record — the
+projects and the three stated impact figures. `/admin/enquiries` is everything
+the public form has sent. The adinkra, the biography and the FAQ stay in
+`lib/content.ts`.
 
-Storage is **Vercel Blob**: one JSON document at `content/site.json` holds the
-editable content, and uploaded photographs live in the same store under
-`gallery/`. One store, no database, which is the right size for a few dozen
-records belonging to one office.
+The home page shows only part of each list — the caps are in `lib/limits.ts`,
+and the admin marks the entries that fall past them rather than dropping them
+silently.
+
+Storage is **Vercel Blob**. The document is **versioned**: each write goes to
+`content/site-<timestamp>.json` and the newest is read back, keeping the three
+most recent. This is not tidiness — blob URLs are served from a CDN with a
+month-long `max-age`, so overwriting one path meant a read straight after a
+write returned the *previous* document, and the next write then persisted that
+stale copy over the office's change. A new path each time has no cached
+version to return. Uploaded photographs live in the same store under
+`gallery/`.
 
 ```
 BLOB_READ_WRITE_TOKEN=...   # appears once the Blob store is connected
@@ -623,8 +654,10 @@ Three things worth keeping:
 
 ## Updates
 
-`UPDATES` in `lib/content.ts` is empty and `components/Updates.tsx` renders
-nothing while it is. Add entries newest first with an ISO `date`; the section
-shows the three most recent. Nothing else on the site carries a date, so this
-is the only place the record can accumulate — and it is what would make the
-impact figures above citable rather than asserted.
+Posted at `/admin/content`, stored with an ISO `date`, and rendered newest
+first by `components/Updates.tsx`, which renders nothing at all while there
+are none. The home page shows the three most recent (`HOME_LIMITS.updates`);
+older ones stay in the store but have no archive page to fall back to, and the
+admin says so. Nothing else on the site carries a date, so this is the only
+place the record can accumulate — and it is what would make the impact figures
+above citable rather than asserted.

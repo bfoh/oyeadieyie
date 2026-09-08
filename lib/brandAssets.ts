@@ -100,6 +100,11 @@ export type AssetField = {
   options?: string[];
   /* Roughly how long the value can be before the design stops holding it. */
   max?: number;
+  /* For a photo field: which cuts this frame can actually take. A circular
+     crop needs a headshot — a wide procession shot reduced to a circle is a
+     sliver of a scene and nobody's face. Offering all seven frames in every
+     slot, which is what the picker did, invited exactly that. */
+  shapes?: BrandPhoto['shape'][];
   help?: string;
 };
 
@@ -178,7 +183,12 @@ export const BRAND_ASSETS: BrandAsset[] = [
         label: 'Body',
         type: 'textarea',
         placeholder: 'Leave empty to print blank paper for handwriting or a printer.',
-        help: 'Blank prints a clean sheet, which is what most offices want.',
+        /* The A4 sheet is a fixed canvas and html-to-image exports exactly
+           what fits on it, so anything past the foot of the page is silently
+           absent from the PDF. Roughly what an A4 letter holds beneath the
+           letterhead block. */
+        max: 1800,
+        help: 'Blank prints a clean sheet, which is what most offices want. About a page at most.',
       },
     ],
   },
@@ -194,7 +204,7 @@ export const BRAND_ASSETS: BrandAsset[] = [
       { key: 'style', label: 'Style of address', type: 'text', default: CHIEF.title, max: 40 },
       { key: 'line', label: 'Second line', type: 'text', default: `${COMPANY.name}, ${COMPANY.group.replace(/^A member/, 'a member')}`, max: 52 },
       { key: 'side', label: 'Face', type: 'select', options: ['Front', 'Reverse'], default: 'Front' },
-      { key: 'photo', label: 'Portrait', type: 'photo', default: 'head-regalia', help: 'Shown on the front, framed in gold.' },
+      { key: 'photo', label: 'Portrait', type: 'photo', default: 'head-regalia', shapes: ['head'], help: 'Shown on the front in a gold circle, so a headshot only.' },
     ],
   },
   {
@@ -216,7 +226,7 @@ export const BRAND_ASSETS: BrandAsset[] = [
     sheet: { w: 220, h: 110, unit: 'mm', label: 'DL 220 × 110 mm' },
     formats: ['PDF'],
     fields: [
-      { key: 'addressee', label: 'Addressee', type: 'textarea', placeholder: 'Leave blank to print the return address only.' },
+      { key: 'addressee', label: 'Addressee', type: 'textarea', placeholder: 'Leave blank to print the return address only.', max: 200 },
     ],
   },
 
@@ -237,7 +247,7 @@ export const BRAND_ASSETS: BrandAsset[] = [
       { key: 'time', label: 'Time', type: 'text', default: '10:00 prompt', max: 24 },
       { key: 'venue', label: 'Venue', type: 'text', default: 'The durbar ground, Adrobaa', max: 46 },
       { key: 'dress', label: 'Dress', type: 'text', default: 'Traditional cloth', max: 34 },
-      { key: 'photo', label: 'Portrait', type: 'photo', default: 'durbar', help: 'Set behind the card, quietened so the type stays first.' },
+      { key: 'photo', label: 'Portrait', type: 'photo', default: 'durbar', shapes: ['portrait', 'wide'], help: 'Set behind the card, quietened so the type stays first.' },
     ],
   },
   {
@@ -284,7 +294,8 @@ export const BRAND_ASSETS: BrandAsset[] = [
         type: 'textarea',
         default:
           'Arrival and seating of guests\nProcession of chiefs\nOpening prayer\nWelcome address\nAddress by the Nkosuo Hene\nPresentation of projects\nDonations and pledges\nClosing prayer\nDeparture of chiefs',
-        help: 'One item per line.',
+        max: 900,
+        help: 'One item per line. About sixteen lines before the programme runs off the page.',
       },
     ],
   },
@@ -303,7 +314,7 @@ export const BRAND_ASSETS: BrandAsset[] = [
       NAME_FIELD,
       { key: 'style', label: 'Style of address', type: 'text', default: `${CHIEF.title}, the ${CHIEF.titleMeaning}`, max: 52 },
       { key: 'contact', label: 'Contact line', type: 'text', placeholder: 'Filled from the office details when supplied', max: 60 },
-      { key: 'photo', label: 'Portrait', type: 'photo', default: 'head-office', help: 'A small round portrait beside the crest.' },
+      { key: 'photo', label: 'Portrait', type: 'photo', default: 'head-office', shapes: ['head'], help: 'A small round portrait beside the crest, so a headshot only.' },
     ],
   },
   {
@@ -323,7 +334,7 @@ export const BRAND_ASSETS: BrandAsset[] = [
         help: 'His own words. Do not paraphrase the motto.',
       },
       { key: 'attribution', label: 'Attribution', type: 'text', default: `${CHIEF.fullName}, ${CHIEF.title}`, max: 56 },
-      { key: 'photo', label: 'Portrait', type: 'photo', default: 'regalia', help: 'Fills the right of the card.' },
+      { key: 'photo', label: 'Portrait', type: 'photo', default: 'regalia', shapes: ['portrait', 'head'], help: 'Fills the right of the card, so a standing or head frame.' },
     ],
   },
   {
@@ -337,7 +348,7 @@ export const BRAND_ASSETS: BrandAsset[] = [
       { key: 'kicker', label: 'Kicker', type: 'text', default: 'From the office', max: 26 },
       { key: 'headline', label: 'Headline', type: 'text', default: 'Commissioning of the sanitation facility', max: 62 },
       { key: 'detail', label: 'Detail line', type: 'text', placeholder: 'Adrobaa · 14 March 2026 · 10:00', max: 52 },
-      { key: 'photo', label: 'Photograph', type: 'photo', default: 'court', help: 'Fills the card; the type sits in a band along the bottom.' },
+      { key: 'photo', label: 'Photograph', type: 'photo', default: 'court', shapes: ['wide', 'portrait'], help: 'Fills the card; the type sits in a band along the bottom.' },
     ],
   },
   {
@@ -351,17 +362,13 @@ export const BRAND_ASSETS: BrandAsset[] = [
       { key: 'status', label: 'Release status', type: 'select', options: ['For immediate release', 'Embargoed'], default: 'For immediate release' },
       { key: 'headline', label: 'Headline', type: 'text', default: 'Nkosuo Hene opens sanitation facility at Adrobaa', max: 68 },
       { key: 'date', label: 'Date', type: 'date' },
-      { key: 'photo', label: 'Portrait', type: 'photo', default: 'head-office', help: 'Sits at the right of the banner.' },
+      { key: 'photo', label: 'Portrait', type: 'photo', default: 'head-office', shapes: ['head'], help: 'Sits in a circle at the right of the banner, so a headshot only.' },
     ],
   },
 ];
 
 export function assetsByCategory(category: BrandAsset['category']) {
   return BRAND_ASSETS.filter((a) => a.category === category);
-}
-
-export function findAsset(id: string) {
-  return BRAND_ASSETS.find((a) => a.id === id) ?? null;
 }
 
 /** Field defaults as a plain record, ready to seed the editor. */
