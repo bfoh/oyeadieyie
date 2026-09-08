@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ASSET_CATEGORIES,
+  BRAND,
   BRAND_ASSETS,
   BRAND_PHOTOS,
   assetFilename,
@@ -123,6 +124,69 @@ export function BrandingHub() {
     setNote(null);
   }
 
+  /**
+   * Hand the finished artwork to the phone's own share sheet.
+   *
+   * This is the route to WhatsApp, to a WhatsApp status, to Instagram and to
+   * everything else: the operating system already knows which apps accept an
+   * image, so offering the file to it beats maintaining a list of links that
+   * would go stale. wa.me links cannot carry an image at all, only text, so
+   * they would not do the job here.
+   *
+   * Rendered at 2x rather than the 3x used for print. Every one of these
+   * platforms recompresses what it receives, so the extra pixels buy nothing
+   * and cost the office upload time on a Ghanaian connection.
+   */
+  async function share() {
+    const node = stageRef.current;
+    if (!node || !asset) return;
+    setBusy('SHARE');
+    setNote(null);
+    try {
+      const { toBlob } = await import('html-to-image');
+      const blob = await toBlob(node, { pixelRatio: 2, cacheBust: true });
+      if (!blob) throw new Error('render failed');
+
+      const file = new File([blob], assetFilename(asset, 'png'), { type: 'image/png' });
+      const text = `${asset.title} — ${BRAND.chief}, ${BRAND.title}`;
+
+      if (typeof navigator !== 'undefined' && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: asset.title, text });
+        setNote('Shared.');
+        return;
+      }
+
+      /* A desktop browser with no share sheet: put it on the clipboard so it
+         can be pasted straight into WhatsApp Web or a message. */
+      if (navigator.clipboard && typeof window.ClipboardItem === 'function') {
+        await navigator.clipboard.write([
+          new window.ClipboardItem({ 'image/png': blob }),
+        ]);
+        setNote('Copied. Paste it into WhatsApp Web, a post or a message.');
+        return;
+      }
+
+      /* Neither available: fall back to a file on disk to attach by hand. */
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.name;
+      a.click();
+      URL.revokeObjectURL(url);
+      setNote('Saved. Attach it from your downloads.');
+    } catch (err) {
+      /* Dismissing the share sheet is not a failure, and should not be
+         reported as one. */
+      if (err instanceof Error && err.name === 'AbortError') {
+        setNote(null);
+        return;
+      }
+      setNote('Could not share that. Download it and attach it instead.');
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function download(format: 'PNG' | 'PDF') {
     const node = stageRef.current;
     if (!node || !asset) return;
@@ -185,7 +249,16 @@ export function BrandingHub() {
               </button>
               <span className="text-xs uppercase tracking-[0.18em] text-ivory/40">Preview</span>
             </div>
-            <div className="flex items-center gap-100">
+            <div className="flex flex-wrap items-center gap-100">
+              <button
+                type="button"
+                onClick={share}
+                disabled={busy !== null}
+                className="inline-flex items-center gap-50 rounded-lg border border-gold px-200 py-75 text-xs font-bold uppercase tracking-[0.1em] text-gold transition-all hover:bg-gold/10 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <span aria-hidden="true">↗</span>
+                {busy === 'SHARE' ? 'Preparing…' : 'Share'}
+              </button>
               {asset.formats.map((f) => (
                 <button
                   key={f}
@@ -229,7 +302,10 @@ export function BrandingHub() {
           </div>
 
           <footer className="flex flex-wrap items-center justify-between gap-100 border-t border-white/10 px-300 py-200 text-xs text-ivory/50">
-            <span>{asset.sheet.label}</span>
+            <span>
+              {asset.sheet.label} · Share opens WhatsApp, status, and anything
+              else on the phone that takes a picture
+            </span>
             {note && <span className="text-gold">{note}</span>}
           </footer>
         </section>

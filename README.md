@@ -526,6 +526,18 @@ Three things worth keeping:
 - **Paper prints dark ink on cream, not the site's ebony.** A letterhead that
   arrives as a solid black sheet is one nobody can afford to print. Screen
   assets keep the site's ebony and gold.
+- **Share hands the file to the operating system, not to a link.** The share
+  button renders the artwork to a PNG and passes it to `navigator.share` with
+  a `files` payload, which opens the phone's own share sheet: WhatsApp, a
+  WhatsApp status, Instagram, and anything else installed that accepts a
+  picture. A `wa.me` link cannot carry an image at all, only text, so it would
+  not do this job. Desktop browsers with no share sheet get the image on the
+  clipboard instead, ready to paste into WhatsApp Web; failing that, a file on
+  disk. Dismissing the sheet raises `AbortError` and must stay silent — the
+  reader changed their mind, they did not hit a fault.
+  Shared images render at 2x rather than the 3x used for print: every one of
+  these platforms recompresses what it receives, so the extra pixels buy
+  nothing and cost upload time on a Ghanaian connection.
 - **The download is exported from the very node on screen**, via
   `html-to-image` at 3x, so the file cannot drift from the approved preview.
   PDFs wrap that image at the sheet's real millimetre size.
