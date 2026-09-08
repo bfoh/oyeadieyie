@@ -526,18 +526,26 @@ Three things worth keeping:
 - **Paper prints dark ink on cream, not the site's ebony.** A letterhead that
   arrives as a solid black sheet is one nobody can afford to print. Screen
   assets keep the site's ebony and gold.
-- **Share hands the file to the operating system, not to a link.** The share
-  button renders the artwork to a PNG and passes it to `navigator.share` with
-  a `files` payload, which opens the phone's own share sheet: WhatsApp, a
-  WhatsApp status, Instagram, and anything else installed that accepts a
-  picture. A `wa.me` link cannot carry an image at all, only text, so it would
-  not do this job. Desktop browsers with no share sheet get the image on the
-  clipboard instead, ready to paste into WhatsApp Web; failing that, a file on
-  disk. Dismissing the sheet raises `AbortError` and must stay silent — the
-  reader changed their mind, they did not hit a fault.
+- **Sharing has to be two mechanisms, because the platforms are two kinds.**
+  Facebook, WhatsApp as a message, X, LinkedIn and Telegram accept a LINK and
+  will not take an image posted from a web page, so `POST /api/admin/share`
+  publishes the artwork to a public blob URL first and that URL is what the
+  platform buttons carry. Instagram, TikTok and a WhatsApp status accept
+  neither — there is no web share intent for any of them, only an upload from
+  the phone — so the panel says so and offers the device share sheet, a
+  download and a clipboard copy instead of a button that could not work.
+
+  The first attempt used `navigator.share` alone. On a phone that is right and
+  lists WhatsApp, Instagram and the rest. On a Mac the identical call produces
+  AirDrop, Messages and Freeform, because no social app registers itself as a
+  macOS share extension — so the one button was useless on a laptop while the
+  label promised otherwise. Keep the device sheet, but never as the only route.
+
   Shared images render at 2x rather than the 3x used for print: every one of
   these platforms recompresses what it receives, so the extra pixels buy
-  nothing and cost upload time on a Ghanaian connection.
+  nothing and cost upload time on a Ghanaian connection. Each share publishes
+  under a fresh filename — overwriting one path per asset would be tidier but
+  would silently change the picture inside a post made last month.
 - **The download is exported from the very node on screen**, via
   `html-to-image` at 3x, so the file cannot drift from the approved preview.
   PDFs wrap that image at the sheet's real millimetre size.

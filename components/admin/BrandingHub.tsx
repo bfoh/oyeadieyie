@@ -14,6 +14,7 @@ import {
 } from '@/lib/brandAssets';
 import { AssetPreview } from './AssetPreview';
 import { WritingAssistant } from './WritingAssistant';
+import { SharePanel } from './SharePanel';
 
 /**
  * The branding hub.
@@ -102,6 +103,9 @@ export function BrandingHub() {
   const [values, setValues] = useState<Values>({});
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
+  const [shared, setShared] = useState<
+    { url: string; text: string; filename: string; blob: Blob } | null
+  >(null);
   const stageRef = useRef<HTMLDivElement>(null);
 
   const asset = useMemo(() => BRAND_ASSETS.find((a) => a.id === openId) ?? null, [openId]);
@@ -122,20 +126,23 @@ export function BrandingHub() {
     setValues(defaultValues(a));
     setOpenId(a.id);
     setNote(null);
+    setShared(null);
   }
 
   /**
-   * Hand the finished artwork to the phone's own share sheet.
+   * Publish the artwork, then offer the ways it can actually travel.
    *
-   * This is the route to WhatsApp, to a WhatsApp status, to Instagram and to
-   * everything else: the operating system already knows which apps accept an
-   * image, so offering the file to it beats maintaining a list of links that
-   * would go stale. wa.me links cannot carry an image at all, only text, so
-   * they would not do the job here.
+   * The first version handed the file straight to `navigator.share`, which
+   * asks the operating system. On a phone that is the right answer and lists
+   * WhatsApp, Instagram and the rest. On a Mac the same call produces AirDrop,
+   * Messages and Freeform, because no social app registers itself as a macOS
+   * share extension — useless, and the label promised otherwise.
    *
-   * Rendered at 2x rather than the 3x used for print. Every one of these
-   * platforms recompresses what it receives, so the extra pixels buy nothing
-   * and cost the office upload time on a Ghanaian connection.
+   * So: publish the picture to a public URL, because Facebook, X, LinkedIn,
+   * Telegram and a WhatsApp message all share a LINK and will not take an
+   * image from a web page. Instagram, TikTok and a WhatsApp status take
+   * neither, only an upload from the phone, and the panel says so rather than
+   * offering a button that cannot work.
    */
   async function share() {
     const node = stageRef.current;
@@ -144,44 +151,34 @@ export function BrandingHub() {
     setNote(null);
     try {
       const { toBlob } = await import('html-to-image');
+      /* 2x: every one of these platforms recompresses what it receives. */
       const blob = await toBlob(node, { pixelRatio: 2, cacheBust: true });
       if (!blob) throw new Error('render failed');
 
-      const file = new File([blob], assetFilename(asset, 'png'), { type: 'image/png' });
-      const text = `${asset.title} — ${BRAND.chief}, ${BRAND.title}`;
+      const filename = assetFilename(asset, 'png');
+      const form = new FormData();
+      form.append('file', new File([blob], filename, { type: 'image/png' }));
+      form.append('assetId', asset.id);
 
-      if (typeof navigator !== 'undefined' && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: asset.title, text });
-        setNote('Shared.');
+      const res = await fetch('/api/admin/share', { method: 'POST', body: form });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setNote(
+          data.error === 'store_not_connected'
+            ? 'The content store is not connected, so there is nowhere to publish it.'
+            : 'Could not publish that. Download it and attach it instead.',
+        );
         return;
       }
 
-      /* A desktop browser with no share sheet: put it on the clipboard so it
-         can be pasted straight into WhatsApp Web or a message. */
-      if (navigator.clipboard && typeof window.ClipboardItem === 'function') {
-        await navigator.clipboard.write([
-          new window.ClipboardItem({ 'image/png': blob }),
-        ]);
-        setNote('Copied. Paste it into WhatsApp Web, a post or a message.');
-        return;
-      }
-
-      /* Neither available: fall back to a file on disk to attach by hand. */
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = file.name;
-      a.click();
-      URL.revokeObjectURL(url);
-      setNote('Saved. Attach it from your downloads.');
-    } catch (err) {
-      /* Dismissing the share sheet is not a failure, and should not be
-         reported as one. */
-      if (err instanceof Error && err.name === 'AbortError') {
-        setNote(null);
-        return;
-      }
-      setNote('Could not share that. Download it and attach it instead.');
+      setShared({
+        url: data.url,
+        text: `${asset.title} — ${BRAND.chief}, ${BRAND.title}`,
+        filename,
+        blob,
+      });
+    } catch {
+      setNote('Could not prepare that. Download it and attach it instead.');
     } finally {
       setBusy(null);
     }
@@ -257,7 +254,7 @@ export function BrandingHub() {
                 className="inline-flex items-center gap-50 rounded-lg border border-gold px-200 py-75 text-xs font-bold uppercase tracking-[0.1em] text-gold transition-all hover:bg-gold/10 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <span aria-hidden="true">↗</span>
-                {busy === 'SHARE' ? 'Preparing…' : 'Share'}
+                {busy === 'SHARE' ? 'Publishing…' : 'Share'}
               </button>
               {asset.formats.map((f) => (
                 <button
@@ -301,11 +298,18 @@ export function BrandingHub() {
             </div>
           </div>
 
+          {shared && (
+            <SharePanel
+              url={shared.url}
+              text={shared.text}
+              filename={shared.filename}
+              blob={shared.blob}
+              onClose={() => setShared(null)}
+            />
+          )}
+
           <footer className="flex flex-wrap items-center justify-between gap-100 border-t border-white/10 px-300 py-200 text-xs text-ivory/50">
-            <span>
-              {asset.sheet.label} · Share opens WhatsApp, status, and anything
-              else on the phone that takes a picture
-            </span>
+            <span>{asset.sheet.label}</span>
             {note && <span className="text-gold">{note}</span>}
           </footer>
         </section>
