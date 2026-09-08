@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { UPDATES, UPDATES_INTRO, formatUpdateDate } from '@/lib/content';
+import { UPDATES_INTRO, formatUpdateDate, type Update } from '@/lib/content';
 import { Reveal } from './Reveal';
 
 /**
@@ -14,10 +14,10 @@ import { Reveal } from './Reveal';
  * "Latest news" heading is worse than no heading, because it says the office
  * has stopped rather than that it has not started.
  */
-export function Updates() {
-  if (!UPDATES.length) return null;
+export function Updates({ updates }: { updates: Update[] }) {
+  if (!updates.length) return null;
 
-  const shown = [...UPDATES]
+  const shown = [...updates]
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 3);
 

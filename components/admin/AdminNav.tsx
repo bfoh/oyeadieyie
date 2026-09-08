@@ -4,9 +4,11 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { CHIEF } from '@/lib/content';
+import { Crest } from '../Crest';
 
 const LINKS = [
   { href: '/admin', label: 'Dashboard' },
+  { href: '/admin/content', label: 'Manage the site' },
   { href: '/admin/branding-hub', label: 'Branding hub' },
   { href: '/admin/checklist', label: 'Launch checklist' },
 ];
@@ -26,8 +28,11 @@ export function AdminNav() {
     <>
       {/* Phone bar. The sidebar is a drawer below lg. */}
       <div className="flex items-center justify-between border-b border-white/10 bg-ebony px-300 py-200 lg:hidden">
-        <span className="font-wordmark text-[11px] font-600 uppercase tracking-[0.16em] text-ivory">
-          Palace admin
+        <span className="flex items-center gap-100">
+          <Crest className="h-[22px] w-[22px] shrink-0 text-gold" />
+          <span className="font-wordmark text-[11px] font-600 uppercase tracking-[0.16em] text-ivory">
+            Palace admin
+          </span>
         </span>
         <button
           type="button"
@@ -45,7 +50,8 @@ export function AdminNav() {
           open ? 'block border-b' : 'hidden',
         ].join(' ')}
       >
-        <div className="hidden items-center gap-100 border-b border-white/10 px-300 py-400 lg:flex">
+        <div className="hidden items-center gap-150 border-b border-white/10 px-300 py-400 lg:flex">
+          <Crest className="h-[30px] w-[30px] shrink-0 text-gold" />
           <span className="font-wordmark text-[11px] font-600 uppercase leading-tight tracking-[0.16em] text-ivory">
             {CHIEF.shortName}
             <span className="mt-50 block text-[9px] tracking-[0.2em] text-gold">Palace admin</span>

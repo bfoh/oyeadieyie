@@ -2,7 +2,8 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { PRESS, MEDIA_KIT, byLens, contactValue } from '@/lib/content';
+import { PRESS, MEDIA_KIT, byLens } from '@/lib/content';
+import { useContactValue } from './ContactContext';
 import { useLens } from './LensContext';
 import { DownloadSimple, Check } from '@phosphor-icons/react/dist/ssr';
 import { Reveal } from './Reveal';
@@ -11,7 +12,7 @@ export function Media() {
   const { lens } = useLens();
   const items = byLens(PRESS, lens);
   /* Null until the palace supplies it, so no bracket ever reaches print. */
-  const press = contactValue('press');
+  const press = useContactValue('press');
 
   return (
     <section

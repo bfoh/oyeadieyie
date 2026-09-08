@@ -2,10 +2,10 @@
 
 import Image from 'next/image';
 import { useState } from 'react';
-import { TIMELINE, GALLERY, CHIEF } from '@/lib/content';
+import { TIMELINE, CHIEF } from '@/lib/content';
 import { Reveal } from './Reveal';
 
-export function Kingdom() {
+export function Kingdom({ gallery }: { gallery: { id: string; url: string; alt: string }[] }) {
   const [activeId, setActiveId] = useState(TIMELINE[0].id);
   const active = TIMELINE.find((t) => t.id === activeId) ?? TIMELINE[0];
 
@@ -98,11 +98,11 @@ export function Kingdom() {
           </h3>
         </Reveal>
         <ul data-reveal-group className="mt-300 grid grid-cols-2 gap-200 md:grid-cols-3">
-          {GALLERY.map((shot, i) => (
-            <Reveal as="li" item key={shot.src} delay={i * 60}>
+          {gallery.slice(0, 9).map((shot, i) => (
+            <Reveal as="li" item key={shot.id} delay={i * 60}>
               <div className="group relative aspect-[3/4] w-full overflow-hidden rounded-2xl border border-ebony-line bg-ebony-card">
                 <Image
-                  src={shot.src}
+                  src={shot.url}
                   alt={shot.alt}
                   fill
                   sizes="(max-width: 768px) 50vw, 30vw"

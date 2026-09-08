@@ -404,6 +404,39 @@ has no `node:crypto`. The login page sits outside that route group — when it
 was inside, it redirected to itself forever. Admin pages are `noindex` and
 absent from the sitemap.
 
+### Managing the site
+
+`/admin/content` edits the parts of the site the office changes often:
+updates, events, gallery photographs and the contact details. Everything else
+— the projects, the adinkra, the biography, the FAQ — stays in
+`lib/content.ts`, because that is the record rather than the noticeboard and
+it should go through review.
+
+Storage is **Vercel Blob**: one JSON document at `content/site.json` holds the
+editable content, and uploaded photographs live in the same store under
+`gallery/`. One store, no database, which is the right size for a few dozen
+records belonging to one office.
+
+```
+BLOB_READ_WRITE_TOKEN=...   # appears once the Blob store is connected
+```
+
+The store `adrobaa-content` exists on the project but must be **connected**
+in the Vercel dashboard under Storage — the CLI cannot complete that step
+without a prompt. Until it is connected the site falls back to the content
+compiled into the build, the admin says so plainly, and writes return 503
+rather than pretending to save.
+
+Two rules worth keeping:
+
+- **`readContent()` never throws.** A site that cannot reach its store should
+  still render from the build rather than fail.
+- **Every writing route calls `isAdmin()` first.** The middleware guards pages,
+  not API routes; without that check an unsigned POST could edit the site.
+
+Public pages read the store with `revalidate = 30`, so a change shows within
+about half a minute without making each visitor wait on a fetch.
+
 ### The branding hub
 
 `lib/brandAssets.ts` declares what the office can issue and the fields each

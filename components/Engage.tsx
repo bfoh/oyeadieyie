@@ -8,13 +8,8 @@ import {
   Phone,
   EnvelopeSimple,
 } from '@phosphor-icons/react/dist/ssr';
-import {
-  ENGAGE_ROUTES,
-  CONTACT,
-  contactValue,
-  whatsappHref,
-  telHref,
-} from '@/lib/content';
+import { ENGAGE_ROUTES, CONTACT } from '@/lib/content';
+import { useContactValue, useWhatsappHref, useTelHref } from './ContactContext';
 import { Reveal } from './Reveal';
 
 type Errors = Partial<Record<'name' | 'email' | 'organisation' | 'detail', string>>;
@@ -28,16 +23,16 @@ export function Engage() {
      pre-filled email rather than making them type it twice. */
   const [rescue, setRescue] = useState<string | null>(null);
 
-  const email = contactValue('email');
-  const phone = contactValue('phone');
+  const email = useContactValue('email');
+  const phone = useContactValue('phone');
   const selectedRoute =
     ENGAGE_ROUTES.find((r) => r.id === route) ?? ENGAGE_ROUTES[0];
   /* Pre-filled with the route the reader actually chose, so the office knows
      what the message is about before reading a word of it. */
-  const whatsapp = whatsappHref(
+  const whatsapp = useWhatsappHref(
     `Good day. I am writing to the office of the Nkosuo Hene of Adrobaa regarding: ${selectedRoute.title}.`,
   );
-  const tel = telHref();
+  const tel = useTelHref();
   const hasDirectRoute = Boolean(whatsapp || tel || email);
 
   function validate(form: HTMLFormElement): Errors {

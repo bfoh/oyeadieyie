@@ -15,8 +15,11 @@ import { Updates } from '@/components/Updates';
 import { Faq } from '@/components/Faq';
 import { Engage } from '@/components/Engage';
 import { Footer } from '@/components/Footer';
+import { Events } from '@/components/Events';
 import { FAQ, CHIEF, COMPANY } from '@/lib/content';
 import { SITE } from '@/lib/site';
+import { readContent } from '@/lib/store';
+import { ContactProvider } from '@/components/ContactContext';
 
 /**
  * Structured data.
@@ -103,9 +106,17 @@ function StructuredData() {
   );
 }
 
-export default function Home() {
+/* The editable half of the site comes from the store on every request, with
+   a short revalidate, so a change made in the admin shows up promptly without
+   making each visitor wait on a fetch. */
+export const revalidate = 30;
+
+export default async function Home() {
+  const content = await readContent();
+
   return (
     <LensProvider>
+      <ContactProvider value={content.contact}>
       <StructuredData />
       <MotionProvider />
       {/* The cloth the whole page is printed on */}
@@ -115,17 +126,19 @@ export default function Home() {
         <Hero />
         <DualProfile />
         <TaglineReveal />
-        <Kingdom />
+        <Kingdom gallery={content.gallery} />
         <Vision />
         <Projects />
         <Adinkra />
         <FilmFeature />
         <Media />
-        <Updates />
+        <Events events={content.events} />
+        <Updates updates={content.updates} />
         <Faq />
         <Engage />
       </main>
-      <Footer />
+        <Footer />
+      </ContactProvider>
     </LensProvider>
   );
 }

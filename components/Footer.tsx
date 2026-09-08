@@ -1,21 +1,15 @@
+'use client';
+
 import Link from 'next/link';
-import {
-  CHIEF,
-  COMPANY,
-  CONTACT,
-  NAV_LINKS,
-  sectionHref,
-  contactValue,
-  whatsappHref,
-  telHref,
-} from '@/lib/content';
+import { CHIEF, COMPANY, CONTACT, NAV_LINKS, sectionHref } from '@/lib/content';
+import { useContactValue, useWhatsappHref, useTelHref } from './ContactContext';
 
 export function Footer() {
-  const email = contactValue('email');
-  const phone = contactValue('phone');
-  const press = contactValue('press');
-  const whatsapp = whatsappHref();
-  const tel = telHref();
+  const email = useContactValue('email');
+  const phone = useContactValue('phone');
+  const press = useContactValue('press');
+  const whatsapp = useWhatsappHref();
+  const tel = useTelHref();
   /* Every line here is conditional. The office column disappears entirely
      rather than printing a bracketed placeholder to the public. */
   const hasOffice = Boolean(email || phone || press || whatsapp);
