@@ -394,9 +394,9 @@ export const PROJECTS: {
     tag: 'Infrastructure',
     status: 'Committed',
     body: 'Lighting along the community roads, so that the evening does not end movement, trade or safety in the town.',
-    /* No photograph of this work exists yet, so the card carries an adinkra.
-       Nkyinkyim, the twisting path, for the roads it will light. */
-    glyph: 'nkyinkyim',
+    image: '/img/project-streetlights.jpg',
+    alt: 'A solar street lamp beside a laterite road at dusk',
+    provenance: 'illustration',
   },
   {
     id: 'scholarships',
@@ -405,8 +405,9 @@ export const PROJECTS: {
     tag: 'Education',
     status: 'Ongoing',
     body: 'Support for pupils whose ability outruns their means, so that a place at school is settled by the student and not by the household budget.',
-    /* Nea Onnim No Sua A, Ohu: he who does not know can know from learning. */
-    glyph: 'neaonnim',
+    image: '/img/project-scholarships.jpg',
+    alt: 'Senior high school students in uniform outside their classroom block, laughing together',
+    provenance: 'illustration',
   },
   {
     id: 'skills',
@@ -426,8 +427,9 @@ export const PROJECTS: {
     tag: 'Environment',
     status: 'Ongoing',
     body: 'Tree planting across the communities, put in now for shade, soil and air that the town will use long after the planting is forgotten.',
-    /* Akoma Ntoso, linked hearts: planting the town will only feel later. */
-    glyph: 'akomantoso',
+    image: '/img/project-trees.jpg',
+    alt: 'Rows of tree seedlings in nursery bags on red earth, ready for planting',
+    provenance: 'illustration',
   },
 ];
 

@@ -78,14 +78,22 @@ Committed. Ask him which are actually complete.
 
 ### Project imagery
 
-**No generated images ship any more.** The three cards that carried them —
-street lights, scholarships, tree planting — now fall back to an adinkra, the
-state the component already had for cards with no photograph. On the official
-site of a sitting chief, a generated picture of a Ghanaian classroom beside
-real documentary photography is the detail a hostile reporter leads with, and
-the on-card label does not travel with a screenshot. The generator script is
-kept but its output is no longer referenced; replace those cards with real
-photographs when the palace has them.
+Three cards — street lights, scholarships, tree planting — carry generated
+illustrations, because no photograph of that work exists anywhere in the
+source material. Each is marked **Illustration** on the card and flagged
+`provenance: 'illustration'` in `lib/content.ts`. They show objects and places
+only, never people: a picture of a person on a development record implies a
+real beneficiary, and these are not photographs of anyone.
+
+They are also excluded from the press kit, which is cleared photography for
+editorial use, and a newsroom should never be handed a generated image.
+
+**Replace them with real photographs as soon as the palace has any**, then
+delete the `provenance` flag so the label disappears. Regenerate with
+`./scripts/generate-project-illustrations.sh` (needs `OPENROUTER_API_KEY` in
+`.env`). Setting `image: undefined` on a card falls back to an adinkra
+instead, which is the state the component uses for a card with no imagery at
+all.
 
 | Card | Image |
 |---|---|
@@ -94,7 +102,7 @@ photographs when the palace has them.
 | Clean community | women receiving brooms, `IMG_9930` |
 | Street and ring roads | sod cutting, `IMG_9721` |
 | Youth skills | young people of Adrobaa, `IMG_9926` |
-| Street lights, Scholarships, Green nature | adinkra, no photograph exists |
+| Street lights, Scholarships, Green nature | generated illustration, labelled `Illustration` |
 
 `provenance: 'photo' | 'render' | 'illustration'` on a project drives the badge
 on the card, so the page and the press kit can no longer disagree about whether
@@ -285,6 +293,23 @@ Defined in `tailwind.config.ts` and `app/globals.css`.
 - One easing curve everywhere: `ease-fluid`, `cubic-bezier(0.32,0.72,0,1)`
 - Scroll reveals use `IntersectionObserver` only, never a scroll listener
 - `prefers-reduced-motion` disables transitions and shows all text immediately
+
+## Typography
+
+Three faces, each with one job:
+
+- **Cinzel** sets the wordmark alone, in capitals. It is drawn from Roman
+  inscriptional lettering — the forms cut into monuments and public buildings
+  — so a name set in caps reads as an inscription rather than as shouting. It
+  is the freely licensed relative of Trajan.
+- **Playfair Display** sets the headings.
+- **Plus Jakarta Sans** sets everything else.
+
+**Numeric font weights are declared in `tailwind.config.ts`.** The components
+have always written `font-500`, `font-600` and `font-700`, but Tailwind ships
+named weights only (`font-semibold`), so all 61 of those classes silently did
+nothing and every heading on the site rendered at 400. The config now declares
+the numeric keys. If headings ever look flat again, check that block first.
 
 ## Accessibility decisions worth keeping
 

@@ -16,7 +16,19 @@ const config: Config = {
       },
       fontFamily: {
         display: ['var(--font-display)', 'Georgia', 'serif'],
+        wordmark: ['var(--font-wordmark)', 'Trajan Pro', 'Georgia', 'serif'],
         sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
+      },
+      /* Numeric weight tokens.
+         The components have always written font-500, font-600 and font-700,
+         but Tailwind ships named weights only (font-semibold), so all 61 of
+         those classes silently produced nothing and every heading on the site
+         rendered at 400. Declaring them makes the markup mean what it says. */
+      fontWeight: {
+        400: '400',
+        500: '500',
+        600: '600',
+        700: '700',
       },
       // B2 spacing tokens only
       spacing: {

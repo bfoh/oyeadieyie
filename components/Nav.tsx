@@ -220,9 +220,16 @@ export function Nav() {
                   the action and the menu, so the wordmark steps down to the
                   correct later reference form. Both are his name, neither is
                   an abbreviation invented for layout. */}
+              {/* Set in inscriptional capitals. Cinzel is drawn for caps, so
+                  the name reads as a cut inscription rather than as shouting,
+                  and the tracking is opened slightly because capitals set
+                  tight close up on one another. */}
               <span
                 aria-hidden="true"
-                className="font-display text-sm font-600 leading-none tracking-wide text-ivory"
+                /* nowrap: a wordmark that breaks across two lines stops
+                   reading as a mark. The phone gets the shorter form and a
+                   smaller size so it stays on one line inside the pill. */
+                className="whitespace-nowrap font-wordmark text-[10.5px] font-700 uppercase leading-none tracking-[0.08em] text-ivory sm:text-[12px] sm:tracking-[0.1em] lg:text-[13px] lg:tracking-[0.09em]"
               >
                 <span className="lg:hidden">Nana Oyeadieyie</span>
                 <span className="hidden lg:inline">{CHIEF.fullName}</span>

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Playfair_Display, Plus_Jakarta_Sans } from 'next/font/google';
+import { Playfair_Display, Plus_Jakarta_Sans, Cinzel } from 'next/font/google';
 import { SITE } from '@/lib/site';
 import './globals.css';
 
@@ -7,6 +7,22 @@ const display = Playfair_Display({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
   variable: '--font-display',
+  display: 'swap',
+});
+
+/**
+ * The wordmark.
+ *
+ * Cinzel is drawn from Roman inscriptional capitals, the lettering cut into
+ * monuments and public buildings. It is built for capitals rather than
+ * merely tolerating them, which is what a name set in caps needs, and it
+ * carries authority without ornament. Used for the wordmark alone; Playfair
+ * still sets the headings.
+ */
+const wordmark = Cinzel({
+  subsets: ['latin'],
+  weight: ['400', '600', '700'],
+  variable: '--font-wordmark',
   display: 'swap',
 });
 
@@ -86,7 +102,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en-GH" className={`${display.variable} ${sans.variable}`}>
+    <html lang="en-GH" className={`${display.variable} ${sans.variable} ${wordmark.variable}`}>
       {/* No <link rel="preload"> for the hero still. The <picture> in Hero
           carries fetchPriority="high" and sits at the top of the document, so
           the preload scanner finds it and resolves <source media> itself.
