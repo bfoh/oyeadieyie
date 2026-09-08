@@ -229,7 +229,7 @@ export function Nav() {
                 /* nowrap: a wordmark that breaks across two lines stops
                    reading as a mark. The phone gets the shorter form and a
                    smaller size so it stays on one line inside the pill. */
-                className="whitespace-nowrap font-wordmark text-[10.5px] font-700 uppercase leading-none tracking-[0.08em] text-ivory sm:text-[12px] sm:tracking-[0.1em] lg:text-[13px] lg:tracking-[0.09em]"
+                className="whitespace-nowrap font-wordmark text-[12px] font-600 uppercase leading-none tracking-[0.16em] text-ivory sm:text-[13.5px] sm:tracking-[0.18em] lg:text-[15px] lg:tracking-[0.15em]"
               >
                 <span className="lg:hidden">Nana Oyeadieyie</span>
                 <span className="hidden lg:inline">{CHIEF.fullName}</span>

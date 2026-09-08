@@ -1,5 +1,9 @@
 import type { Metadata, Viewport } from 'next';
-import { Playfair_Display, Plus_Jakarta_Sans, Bodoni_Moda } from 'next/font/google';
+import {
+  Playfair_Display,
+  Plus_Jakarta_Sans,
+  Cormorant_Garamond,
+} from 'next/font/google';
 import { SITE } from '@/lib/site';
 import './globals.css';
 
@@ -13,21 +17,19 @@ const display = Playfair_Display({
 /**
  * The wordmark.
  *
- * Bodoni Moda, a didone: thick vertical stems against razor-thin horizontal
- * hairlines. It is the closest freely licensed relative of Didot, which is
- * not on Google Fonts, and it carries the same aristocratic register.
+ * Set in the manner of a royal institution's mark: Roman capitals, light on
+ * the page, widely letterspaced, with fine hairline serifs. The weight and
+ * the tracking do as much work here as the typeface — the same face set bold
+ * and tight reads as a shout rather than as an institution, which is exactly
+ * what earlier attempts got wrong.
  *
- * Didones are drawn for display sizes, where the hairlines have room to be
- * thin. At wordmark size they need weight and a little tracking or the thin
- * strokes drop out on a phone screen, which is why this is set at 700 rather
- * than 400.
- *
- * Playfair still sets the headings — the same family of forms, one step less
- * severe, so the wordmark reads as the sharper voice of the same house.
+ * Cormorant Garamond carries the high stroke contrast and the delicate
+ * serifs that treatment needs, and its capitals are drawn generously enough
+ * to hold a long name across one line.
  */
-const wordmark = Bodoni_Moda({
+const wordmark = Cormorant_Garamond({
   subsets: ['latin'],
-  weight: ['500', '600', '700'],
+  weight: ['500', '600'],
   style: ['normal'],
   variable: '--font-wordmark',
   display: 'swap',

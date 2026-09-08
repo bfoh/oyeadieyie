@@ -298,21 +298,22 @@ Defined in `tailwind.config.ts` and `app/globals.css`.
 
 Three faces, each with one job:
 
-- **Bodoni Moda** sets the wordmark alone, in capitals. A didone: thick
-  vertical stems against razor-thin horizontal hairlines. It is the closest
-  freely licensed relative of Didot, which is not on Google Fonts.
-- **Playfair Display** sets the headings — the same high-contrast family of
-  forms, one step less severe, so the wordmark reads as the sharper voice of
-  the same house.
+- **Cormorant Garamond** sets the wordmark alone, in capitals.
+- **Playfair Display** sets the headings.
 - **Plus Jakarta Sans** sets everything else.
 
-Didones are drawn for display sizes, where their hairlines have room to be
-thin. The wordmark is set at 700 rather than 400 for exactly this reason: at
-13px, and 10.5px on a phone, the thin strokes of a lighter weight break up on
-screen. Do not lighten it without checking it on a phone.
+**The wordmark's treatment matters more than its typeface.** The reference is
+the mark used by royal institutions: Roman capitals, light on the page, widely
+letterspaced, with fine hairline serifs. Two earlier attempts used reasonable
+faces (Cinzel, then Bodoni Moda) set bold and tight, and both read as emphasis
+rather than as an institution. What fixed it was weight 600 instead of 700 and
+tracking opened to 0.15–0.18em. If the mark ever looks wrong again, check the
+tracking and the weight before changing the face.
+
+Caps set tight read as a shout. Caps set open read as an inscription.
 
 `next/font` rejects the `axes` option whenever an explicit `weight` is given,
-so the optical size axis cannot be pinned here. Weight carries it instead.
+so a variable font's optical size axis cannot be pinned alongside a weight.
 
 **Numeric font weights are declared in `tailwind.config.ts`.** The components
 have always written `font-500`, `font-600` and `font-700`, but Tailwind ships

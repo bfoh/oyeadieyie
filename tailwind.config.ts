@@ -16,7 +16,7 @@ const config: Config = {
       },
       fontFamily: {
         display: ['var(--font-display)', 'Georgia', 'serif'],
-        wordmark: ['var(--font-wordmark)', 'Didot', 'Bodoni MT', 'Georgia', 'serif'],
+        wordmark: ['var(--font-wordmark)', 'Garamond', 'Georgia', 'serif'],
         sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
       },
       /* Numeric weight tokens.
