@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import type { SiteContent } from '@/lib/store';
 import { WritingAssistant } from './WritingAssistant';
+import { AttachPhoto } from './AttachPhoto';
 
 /**
  * What the office can change without a developer.
@@ -51,8 +52,12 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
   const [error, setError] = useState<string | null>(null);
 
   /* Forms */
-  const [update, setUpdate] = useState({ title: '', date: '', body: '' });
-  const [event, setEvent] = useState({ title: '', date: '', time: '', place: '', body: '' });
+  const [update, setUpdate] = useState<{ title: string; date: string; body: string; image?: string; alt?: string }>(
+    { title: '', date: '', body: '' },
+  );
+  const [event, setEvent] = useState<{ title: string; date: string; time: string; place: string; body: string; imageUrl?: string; imageAlt?: string }>(
+    { title: '', date: '', time: '', place: '', body: '' },
+  );
   const [alt, setAlt] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [contact, setContact] = useState(initial.contact);
@@ -200,6 +205,14 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
                   onDraft={(text) => setUpdate((u) => ({ ...u, body: text }))}
                 />
               </div>
+              <div>
+                <label className={label}>Photograph</label>
+                <AttachPhoto
+                  value={update.image}
+                  alt={update.alt}
+                  onChange={(image, alt) => setUpdate((u) => ({ ...u, image, alt }))}
+                />
+              </div>
               <button
                 type="button"
                 className={primary}
@@ -228,12 +241,18 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
                 {content.updates.map((u) => (
                   <li key={u.id} className="rounded-2xl border border-white/10 bg-ebony-raised p-300">
                     <div className="flex items-start justify-between gap-200">
+                      <div className="flex gap-200">
+                        {u.image && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={u.image} alt={u.alt ?? ''} className="h-[70px] w-[70px] shrink-0 rounded-lg object-cover" />
+                        )}
                       <div>
                         <time dateTime={u.date} className="text-xs font-semibold uppercase tracking-[0.14em] text-gold">
                           {formatDate(u.date)}
                         </time>
                         <h3 className="mt-75 font-display text-xl font-600 text-ivory">{u.title}</h3>
                         {u.body && <p className="mt-100 text-sm leading-relaxed text-ivory/65">{u.body}</p>}
+                      </div>
                       </div>
                       <button
                         type="button"
@@ -297,6 +316,14 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
                     .join('\n')}
                   placeholder="Chiefs and queen mothers gather; the sanitation block will be handed to the town"
                   onDraft={(text) => setEvent((ev) => ({ ...ev, body: text }))}
+                />
+              </div>
+              <div>
+                <label className={label}>Photograph</label>
+                <AttachPhoto
+                  value={event.imageUrl}
+                  alt={event.imageAlt}
+                  onChange={(imageUrl, imageAlt) => setEvent((ev) => ({ ...ev, imageUrl, imageAlt }))}
                 />
               </div>
               <button

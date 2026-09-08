@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import { UPDATES_INTRO, formatUpdateDate, type Update } from '@/lib/content';
 import { Reveal } from './Reveal';
 
@@ -61,12 +60,14 @@ export function Updates({ updates }: { updates: Update[] }) {
               <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-ebony-line bg-ebony transition-all duration-700 ease-fluid hover:-translate-y-[4px] hover:border-gold-dim hover:shadow-[0_18px_50px_rgba(0,0,0,0.5)]">
                 {item.image && (
                   <div className="relative aspect-[16/10] w-full overflow-hidden bg-ebony-card">
-                    <Image
+                    {/* Uploaded photographs live in the blob store, on a host
+                        the optimiser would have to be told about; a plain img
+                        keeps the office free to upload without a config change. */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
                       src={item.image}
                       alt={item.alt ?? item.title}
-                      fill
-                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      className="object-cover transition-transform duration-[1200ms] ease-fluid group-hover:scale-[1.05]"
+                      className="h-full w-full object-cover transition-transform duration-[1200ms] ease-fluid group-hover:scale-[1.05]"
                     />
                   </div>
                 )}

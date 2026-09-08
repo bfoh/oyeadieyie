@@ -19,6 +19,9 @@ export async function POST(request: Request) {
   const form = await request.formData();
   const file = form.get('file');
   const alt = String(form.get('alt') ?? '').trim().slice(0, 200);
+  /* An attachment belongs to its update or event, not to the gallery grid,
+     so it is stored but not listed. */
+  const attach = String(form.get('mode') ?? '') === 'attachment';
 
   if (!(file instanceof File)) {
     return NextResponse.json({ error: 'no_file' }, { status: 400 });
@@ -36,9 +39,12 @@ export async function POST(request: Request) {
   }
 
   const image = await saveImage(file, alt);
-  const content = await readContent();
-  content.gallery = [image, ...content.gallery];
-  await writeContent(content);
+
+  if (!attach) {
+    const content = await readContent();
+    content.gallery = [image, ...content.gallery];
+    await writeContent(content);
+  }
 
   return NextResponse.json({ ok: true, image });
 }

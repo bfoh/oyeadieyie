@@ -15,3 +15,4 @@ videos/
 
 # TypeScript incremental build cache
 tsconfig.tsbuildinfo
+.env*.local

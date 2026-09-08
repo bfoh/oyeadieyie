@@ -427,6 +427,16 @@ without a prompt. Until it is connected the site falls back to the content
 compiled into the build, the admin says so plainly, and writes return 503
 rather than pretending to save.
 
+Updates and events each take a photograph. Attachments are uploaded with
+`mode=attachment`, which stores the file but deliberately does NOT add it to
+the gallery: a picture belonging to one announcement should not also turn up
+in the gallery grid on the home page. A description is required, as everywhere
+else here.
+
+Uploaded photographs render through a plain `<img>` rather than `next/image`.
+The blob store is an arbitrary host the optimiser would have to be told about,
+and the office should be able to upload without anyone editing a config file.
+
 Two rules worth keeping:
 
 - **`readContent()` never throws.** A site that cannot reach its store should

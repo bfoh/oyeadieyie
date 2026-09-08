@@ -33,6 +33,7 @@ export type SiteEvent = {
   place?: string;
   body?: string;
   imageUrl?: string;
+  imageAlt?: string;
 };
 
 export type SiteContent = {

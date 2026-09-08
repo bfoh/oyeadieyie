@@ -20,7 +20,7 @@ export async function GET() {
 type Action =
   | { action: 'add-update'; update: { title: string; date: string; body: string; image?: string; alt?: string } }
   | { action: 'delete-update'; id: string }
-  | { action: 'add-event'; event: { title: string; date: string; time?: string; place?: string; body?: string; imageUrl?: string } }
+  | { action: 'add-event'; event: { title: string; date: string; time?: string; place?: string; body?: string; imageUrl?: string; imageAlt?: string } }
   | { action: 'delete-event'; id: string }
   | { action: 'delete-image'; id: string }
   | { action: 'set-contact'; contact: Partial<SiteContent['contact']> };
@@ -84,6 +84,7 @@ export async function POST(request: Request) {
           place: clean(body.event?.place, 120) || undefined,
           body: clean(body.event?.body, 1200) || undefined,
           imageUrl: clean(body.event?.imageUrl, 400) || undefined,
+          imageAlt: clean(body.event?.imageAlt, 200) || undefined,
         },
       ].sort((a, b) => a.date.localeCompare(b.date));
       break;
