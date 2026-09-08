@@ -6,6 +6,8 @@ import { readContent, writeContent, saveImage, storeConfigured } from '@/lib/sto
    document. The two steps are separate so a failed write never leaves a
    record pointing at a file that does not exist. */
 const MAX_BYTES = 8 * 1024 * 1024;
+/* The browser resizes before uploading and re-encodes as WebP where it can,
+   falling back to JPEG; the originals may be anything a phone produces. */
 const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
 
 export async function POST(request: Request) {

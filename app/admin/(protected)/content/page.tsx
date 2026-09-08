@@ -1,4 +1,5 @@
 import { ContentManager } from '@/components/admin/ContentManager';
+import { StoredFiles } from '@/components/admin/StoredFiles';
 import { readContent, storeConfigured } from '@/lib/store';
 
 /* Always fresh: the office needs to see what it just changed. */
@@ -20,6 +21,7 @@ export default async function ContentPage() {
         </p>
       </header>
       <ContentManager initial={content} configured={storeConfigured()} />
+      {storeConfigured() && <StoredFiles />}
     </>
   );
 }

@@ -105,13 +105,12 @@ export function Kingdom({ gallery }: { gallery: { id: string; url: string; alt: 
           {gallery.slice(0, 9).map((shot, i) => (
             <Reveal as="li" item key={shot.id} delay={i * 60}>
               <div className="group relative aspect-[3/4] w-full overflow-hidden rounded-2xl border border-ebony-line bg-ebony-card">
-                {/* Gallery frames may be built in or uploaded to the store;
-                    a plain img serves both without allow-listing a host. */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src={shot.url}
                   alt={shot.alt}
-                  className="h-full w-full object-cover transition-transform duration-[1200ms] ease-fluid group-hover:scale-[1.05]"
+                  fill
+                  sizes="(max-width: 768px) 50vw, 30vw"
+                  className="object-cover transition-transform duration-[1200ms] ease-fluid group-hover:scale-[1.05]"
                 />
               </div>
             </Reveal>

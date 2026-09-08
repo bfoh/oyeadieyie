@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import type { SiteContent } from '@/lib/store';
 import { WritingAssistant } from './WritingAssistant';
 import { AttachPhoto } from './AttachPhoto';
+import { formatBytes, resizeImage } from '@/lib/resizeImage';
 
 /**
  * What the office can change without a developer.
@@ -102,8 +103,9 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
     setNote(null);
     setError(null);
     try {
+      const { file: toSend, before, after, resized } = await resizeImage(file);
       const form = new FormData();
-      form.append('file', file);
+      form.append('file', toSend);
       form.append('alt', alt);
       const res = await fetch('/api/admin/gallery', { method: 'POST', body: form });
       const data = await res.json().catch(() => ({}));
@@ -121,7 +123,11 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
       setContent((c) => ({ ...c, gallery: [data.image, ...c.gallery] }));
       setFile(null);
       setAlt('');
-      setNote('Photograph added.');
+      setNote(
+        resized
+          ? `Photograph added, resized from ${formatBytes(before)} to ${formatBytes(after)}.`
+          : 'Photograph added.',
+      );
     } catch {
       setError('Could not reach the server.');
     } finally {

@@ -1,7 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  images: { formats: ['image/avif', 'image/webp'] },
+  images: {
+    formats: ['image/avif', 'image/webp'],
+    /* Photographs the office uploads live in Vercel Blob, on a per-store
+       hostname. Allow-listing it lets them go through the optimiser like
+       everything in public/, rather than being served at full size by a
+       plain <img>. */
+    remotePatterns: [
+      { protocol: 'https', hostname: '*.public.blob.vercel-storage.com' },
+    ],
+  },
 
   /**
    * Files under public/ bypass the image optimiser and are served with

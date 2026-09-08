@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { resizeImage } from '@/lib/resizeImage';
 
 /**
  * A photograph attached to one update or event.
@@ -31,8 +32,11 @@ export function AttachPhoto({
     setBusy(true);
     setError(null);
     try {
+      /* Shrink before sending: this saves the office's upload as well as the
+         visitor's download. */
+      const { file: toSend } = await resizeImage(file);
       const form = new FormData();
-      form.append('file', file);
+      form.append('file', toSend);
       form.append('alt', caption);
       form.append('mode', 'attachment');
       const res = await fetch('/api/admin/gallery', { method: 'POST', body: form });

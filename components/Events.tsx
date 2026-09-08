@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import type { SiteEvent } from '@/lib/store';
 import { parseISODate } from '@/lib/content';
 import { Reveal } from './Reveal';
@@ -80,13 +81,12 @@ export function Events({ events }: { events: SiteEvent[] }) {
                   {ev.body && <p className="mt-100 text-base leading-relaxed text-ivory/65">{ev.body}</p>}
                   {ev.imageUrl && (
                     <div className="relative mt-200 aspect-[16/9] overflow-hidden rounded-xl">
-                      {/* Blob URLs are arbitrary hosts, so a plain img avoids
-                          having to allow-list the store with the optimiser. */}
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
+                      <Image
                         src={ev.imageUrl}
                         alt={ev.imageAlt ?? ev.title}
-                        className="h-full w-full object-cover"
+                        fill
+                        sizes="(max-width: 768px) 100vw, 45vw"
+                        className="object-cover"
                       />
                     </div>
                   )}

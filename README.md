@@ -510,6 +510,37 @@ route, and `MAX_ENQUIRIES`. Trimming only ever removes enquiries the office has
 already dealt with, oldest first, so a flood can never push an unanswered one
 out of the record.
 
+### Photographs the office uploads
+
+**Resized in the browser, before upload** (`lib/resizeImage.ts`), not on the
+server. The office uploads over Ghanaian mobile data and a phone photograph is
+commonly 4 to 8 MB, so doing it here saves their upload as well as the
+visitor's download; a server pass would still make them send all of it.
+Measured on a real 4672x7008 photograph from `pics/`: **9.0 MB to 365 KB, 96%
+smaller**, at 1067x1600 in WebP.
+
+Two details that matter. `createImageBitmap(file, { imageOrientation:
+'from-image' })` — phone photographs carry their rotation in EXIF rather than
+in the pixels, and without it they upload sideways. And the helper returns the
+original untouched if the encode fails or somehow produces something larger,
+rather than making things worse.
+
+The 8 MB limit stays as the *input* ceiling; it is the stored artefact that has
+to be small.
+
+Uploads are served through `next/image`: the blob host is allow-listed in
+`next.config.mjs` under `images.remotePatterns`, so an uploaded photograph gets
+the same AVIF/WebP and responsive srcset as anything in `public/`. The plain
+`<img>` tags in `Kingdom`, `Updates` and `Events` existed only because that
+host was not allow-listed.
+
+**Stored files** (`/admin/content`, bottom) lists blobs nothing points at and
+deletes them. Two ways they accumulated invisibly: a photograph chosen for an
+update that was never posted is uploaded the moment it is picked, and every
+press of Share publishes a fresh PNG for ever. Deletion re-checks the document
+first, so a file that has been attached to something since the list was taken
+is refused rather than removed.
+
 ### The branding hub
 
 `lib/brandAssets.ts` declares what the office can issue and the fields each
