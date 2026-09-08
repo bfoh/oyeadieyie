@@ -5,7 +5,8 @@ import { readContent, storeConfigured } from '@/lib/store';
 export const dynamic = 'force-dynamic';
 
 export default async function ContentPage() {
-  const content = await readContent();
+  /* The office must see what it just changed, not a cached copy. */
+  const content = await readContent({ fresh: true });
   return (
     <>
       <header className="mb-400">

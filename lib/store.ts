@@ -81,16 +81,27 @@ export function baseContent(): SiteContent {
  * Read the document.
  *
  * Never throws: a site that cannot reach its store should still render from
- * the build rather than fail. `revalidate` keeps the public pages fresh
- * without making every visit wait on a fetch.
+ * the build rather than fail.
+ *
+ * `fresh` matters more than it looks. Public pages are happy with a cached
+ * copy — that is the whole point of the 30 second window. But every write is
+ * a read-modify-write of one document, and reading a cached copy there means
+ * editing a stale version and putting it back: deleting two things in a row
+ * resurrected the first one, because the second delete started from a copy
+ * taken before the first had landed. Writes must always read fresh.
  */
-export async function readContent(): Promise<SiteContent> {
+export async function readContent(
+  { fresh = false }: { fresh?: boolean } = {},
+): Promise<SiteContent> {
   if (!storeConfigured()) return baseContent();
   try {
     const { blobs } = await list({ prefix: DOC, limit: 1 });
     const found = blobs.find((b) => b.pathname === DOC);
     if (!found) return baseContent();
-    const res = await fetch(found.url, { next: { revalidate: 30 } });
+    const res = await fetch(
+      found.url,
+      fresh ? { cache: 'no-store' } : { next: { revalidate: 30 } },
+    );
     if (!res.ok) return baseContent();
     const parsed = (await res.json()) as Partial<SiteContent>;
     const base = baseContent();

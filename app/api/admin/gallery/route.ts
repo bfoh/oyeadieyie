@@ -41,7 +41,8 @@ export async function POST(request: Request) {
   const image = await saveImage(file, alt);
 
   if (!attach) {
-    const content = await readContent();
+    /* Fresh, never cached: this is a read-modify-write. */
+  const content = await readContent({ fresh: true });
     content.gallery = [image, ...content.gallery];
     await writeContent(content);
   }

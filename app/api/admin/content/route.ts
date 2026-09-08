@@ -14,7 +14,10 @@ export async function GET() {
   if (!(await isAdmin())) {
     return NextResponse.json({ error: 'unauthorised' }, { status: 401 });
   }
-  return NextResponse.json({ content: await readContent(), configured: storeConfigured() });
+  return NextResponse.json({
+    content: await readContent({ fresh: true }),
+    configured: storeConfigured(),
+  });
 }
 
 type Action =
@@ -40,7 +43,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'bad_request' }, { status: 400 });
   }
 
-  const content = await readContent();
+  /* Fresh, never cached: this is a read-modify-write. */
+  const content = await readContent({ fresh: true });
   const clean = (v: unknown, max: number) => String(v ?? '').trim().slice(0, max);
 
   /**
