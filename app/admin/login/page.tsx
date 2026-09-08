@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { isConfigured } from '@/lib/admin-auth';
 import { LoginForm } from '@/components/admin/LoginForm';
 import { CHIEF } from '@/lib/content';
+import { Crest } from '@/components/Crest';
 
 export const metadata: Metadata = {
   title: 'Palace admin',
@@ -12,7 +13,11 @@ export default function AdminLogin() {
   return (
     <main className="flex min-h-[100svh] items-center justify-center bg-ebony px-300 py-500">
       <div className="w-full max-w-[400px]">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">
+        {/* The crest sits on every other admin page, in the nav. This page is
+            outside that layout, so it carried no mark at all — the one screen
+            an aide sees before signing in looked like it belonged to nothing. */}
+        <Crest className="h-[44px] w-[44px] text-gold" />
+        <p className="mt-300 text-xs font-semibold uppercase tracking-[0.2em] text-gold">
           Office of the {CHIEF.title}
         </p>
         <h1 className="mt-200 font-display text-4xl font-600 leading-tight text-ivory">
