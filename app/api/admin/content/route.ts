@@ -15,6 +15,7 @@ type Action =
   | { action: 'add-update'; update: { title: string; date: string; body: string; image?: string; alt?: string } }
   | { action: 'delete-update'; id: string }
   | { action: 'add-event'; event: { title: string; date: string; time?: string; place?: string; body?: string; imageUrl?: string; imageAlt?: string } }
+  | { action: 'set-event'; id: string; event: { title?: string; date?: string; time?: string; place?: string; body?: string } }
   | { action: 'delete-event'; id: string }
   | { action: 'delete-image'; id: string }
   | { action: 'set-enquiry'; id: string; status?: string; note?: string }
@@ -132,6 +133,39 @@ export async function POST(request: Request) {
       ].sort((a, b) => a.date.localeCompare(b.date));
       break;
     }
+    /* Editing an engagement in place, so a date that moves keeps its record
+       rather than becoming a delete and a re-entry — the enquiry that was
+       answered with it still points at this id. */
+    case 'set-event': {
+      const event = content.events.find((e) => e.id === body.id);
+      if (!event) {
+        return NextResponse.json({ error: 'not_found' }, { status: 404 });
+      }
+      const f = body.event ?? {};
+      if (typeof f.title === 'string') {
+        const title = clean(f.title, 120);
+        if (!title) {
+          return NextResponse.json({ error: 'title_and_valid_date_required' }, { status: 400 });
+        }
+        event.title = title;
+      }
+      if (typeof f.date === 'string') {
+        const date = cleanDate(f.date);
+        if (!date) {
+          return NextResponse.json({ error: 'title_and_valid_date_required' }, { status: 400 });
+        }
+        event.date = date;
+      }
+      /* The optional three clear when they arrive empty: an engagement that
+         has lost its venue must be able to say so. */
+      if (typeof f.time === 'string') event.time = clean(f.time, 40) || undefined;
+      if (typeof f.place === 'string') event.place = clean(f.place, 120) || undefined;
+      if (typeof f.body === 'string') event.body = clean(f.body, 1200) || undefined;
+      /* A moved date changes the order the public page prints. */
+      content.events = [...content.events].sort((a, b) => a.date.localeCompare(b.date));
+      break;
+    }
+
     case 'delete-event': {
       const going = content.events.find((e) => e.id === body.id);
       content.events = content.events.filter((e) => e.id !== body.id);

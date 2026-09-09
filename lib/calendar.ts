@@ -27,6 +27,9 @@ export type EntryKind = 'event' | 'update' | 'request';
 
 export type CalendarEntry = {
   id: string;
+  /* The id of the record itself, without the kind prefix — what a write to
+     the store needs, where `id` is only unique across the three kinds. */
+  recordId: string;
   kind: EntryKind;
   /* YYYY-MM-DD */
   date: string;
@@ -61,6 +64,7 @@ export const KIND_NOTE: Record<EntryKind, string> = {
 function fromEvent(e: SiteEvent): CalendarEntry {
   return {
     id: `event-${e.id}`,
+    recordId: e.id,
     kind: 'event',
     date: e.date,
     title: e.title,
@@ -74,6 +78,7 @@ function fromEvent(e: SiteEvent): CalendarEntry {
 function fromUpdate(u: Update): CalendarEntry {
   return {
     id: `update-${u.id}`,
+    recordId: u.id,
     kind: 'update',
     date: u.date,
     title: u.title,
@@ -85,6 +90,7 @@ function fromUpdate(u: Update): CalendarEntry {
 function fromEnquiry(e: Enquiry): CalendarEntry {
   return {
     id: `request-${e.id}`,
+    recordId: e.id,
     kind: 'request',
     date: e.requestedDate!,
     title: e.name,

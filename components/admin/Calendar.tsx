@@ -27,6 +27,12 @@ import type { SiteContent } from '@/lib/store';
  * moving the mouse away does not snatch away a card someone deliberately
  * opened.
  *
+ * Engagements are also written from here: added on a day, edited in place, and
+ * removed behind a confirmation. Everything else on the grid is read-only, and
+ * deliberately so — an update is the record of something that already happened
+ * and a request belongs to whoever sent it, so both are changed on their own
+ * screen rather than from a card that opens on hover.
+ *
  * Requests are drawn differently from engagements, and said so in the legend.
  * A date somebody has asked for is not a date the chief has agreed to, and a
  * calendar that blurred the two would produce exactly the double-booking the
@@ -95,6 +101,170 @@ function EntryCard({ entry, compact }: { entry: CalendarEntry; compact?: boolean
   );
 }
 
+/* ---------------------------------------------------------------
+   The engagement form
+--------------------------------------------------------------- */
+
+export type Draft = {
+  title: string;
+  /* YYYY-MM-DD. Carried in the draft rather than taken from the day, so an
+     engagement that moves can be moved by editing it instead of being deleted
+     and typed in again. */
+  date: string;
+  time: string;
+  place: string;
+  body: string;
+};
+
+export const BLANK_DRAFT: Draft = { title: '', date: '', time: '', place: '', body: '' };
+
+/* py-100 rather than py-75: at the smaller padding these were 34px tall,
+   and Cancel was 17px — fine with a mouse, not with a thumb. */
+const FORM_INPUT =
+  'w-full rounded-lg border border-white/10 bg-ebony px-100 py-100 text-xs text-ivory placeholder:text-ivory/25 focus:border-gold focus:outline-none';
+
+/**
+ * One form for both jobs.
+ *
+ * Adding and editing an engagement are the same five fields, and keeping two
+ * copies of them is how the two drift apart — a field added to one and not the
+ * other, a limit raised in one place. The only difference is the date: when
+ * adding, the day is the cell that was clicked, so the field would be asking a
+ * question already answered; when editing, it is the field most likely to be
+ * the reason the form was opened at all.
+ */
+function EngagementForm({
+  idPrefix,
+  mode,
+  draft,
+  onChange,
+  onSubmit,
+  onCancel,
+  saving,
+  error,
+  titleRef,
+  className,
+}: {
+  idPrefix: string;
+  mode: 'add' | 'edit';
+  draft: Draft;
+  onChange: (patch: Partial<Draft>) => void;
+  onSubmit: () => void;
+  onCancel: () => void;
+  saving: boolean;
+  error: string | null;
+  titleRef: React.RefObject<HTMLInputElement | null>;
+  className?: string;
+}) {
+  const editing = mode === 'edit';
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit();
+      }}
+      className={className}
+    >
+      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ivory/50">
+        {editing ? 'Edit engagement' : 'New engagement'}
+      </p>
+
+      <label className="sr-only" htmlFor={`t-${idPrefix}`}>
+        What it is
+      </label>
+      <input
+        id={`t-${idPrefix}`}
+        ref={titleRef}
+        autoFocus
+        value={draft.title}
+        maxLength={120}
+        placeholder="Durbar of Chiefs"
+        onChange={(e) => onChange({ title: e.target.value })}
+        className={FORM_INPUT + ' mt-75'}
+      />
+
+      <div className="mt-75 grid grid-cols-2 gap-75">
+        {editing && (
+          <div>
+            <label className="sr-only" htmlFor={`dt-${idPrefix}`}>Date</label>
+            <input
+              id={`dt-${idPrefix}`}
+              type="date"
+              value={draft.date}
+              onChange={(e) => onChange({ date: e.target.value })}
+              className={FORM_INPUT}
+            />
+          </div>
+        )}
+        <div>
+          <label className="sr-only" htmlFor={`tm-${idPrefix}`}>Time</label>
+          <input
+            id={`tm-${idPrefix}`}
+            value={draft.time}
+            maxLength={40}
+            placeholder="10:00"
+            onChange={(e) => onChange({ time: e.target.value })}
+            className={FORM_INPUT}
+          />
+        </div>
+        <div className={editing ? 'col-span-2' : ''}>
+          <label className="sr-only" htmlFor={`pl-${idPrefix}`}>Place</label>
+          <input
+            id={`pl-${idPrefix}`}
+            value={draft.place}
+            maxLength={120}
+            placeholder="Palace grounds"
+            onChange={(e) => onChange({ place: e.target.value })}
+            className={FORM_INPUT}
+          />
+        </div>
+      </div>
+
+      <label className="sr-only" htmlFor={`bd-${idPrefix}`}>Detail</label>
+      <textarea
+        id={`bd-${idPrefix}`}
+        rows={2}
+        value={draft.body}
+        maxLength={1200}
+        placeholder="A sentence for the public calendar."
+        onChange={(e) => onChange({ body: e.target.value })}
+        className={FORM_INPUT + ' mt-75 resize-y'}
+      />
+
+      {error && (
+        <p role="alert" className="mt-75 text-[11px] text-crimson">
+          {error}
+        </p>
+      )}
+
+      {/* Said plainly, because it is: this is the same list the public
+          calendar prints. */}
+      <p className="mt-75 text-[10px] leading-relaxed text-ivory/40">
+        {editing
+          ? 'The change reaches the public calendar within about half a minute.'
+          : 'Goes on the public calendar within about half a minute.'}
+      </p>
+
+      <div className="mt-100 flex items-center gap-75">
+        <button
+          type="submit"
+          disabled={saving || !draft.title.trim()}
+          className="rounded-lg bg-gold px-200 py-100 text-[11px] font-semibold text-ebony transition-all hover:bg-[#e6c34d] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {saving ? 'Saving…' : editing ? 'Save it' : 'Add it'}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-lg px-100 py-100 text-[11px] font-semibold text-ivory/50 hover:text-ivory"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
+  );
+}
+
 export function Calendar({
   initial,
   configured,
@@ -133,9 +303,12 @@ export function Calendar({
   const [maxH, setMaxH] = useState<number | null>(null);
   const [offsetX, setOffsetX] = useState(0);
 
-  /* The day whose "add an engagement" form is open, and what is in it. */
+  /* The day whose "add an engagement" form is open, the engagement being
+     edited, the one waiting on a confirmed delete, and what is in the form. */
   const [adding, setAdding] = useState<string | null>(null);
-  const [draft, setDraft] = useState({ title: '', time: '', place: '', body: '' });
+  const [editing, setEditing] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState<string | null>(null);
+  const [draft, setDraft] = useState<Draft>(BLANK_DRAFT);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const titleRef = useRef<HTMLInputElement>(null);
@@ -146,11 +319,14 @@ export function Calendar({
   /* A new day, or the form opening, means a new measurement: the card is a
      different height either way, and a placement worked out for the old one
      leaves the new one hanging off the screen. */
+  /* Editing and the delete confirmation change the card's height as surely as
+     the add form does, so all three are measured again. */
+  const shape = `${adding}|${editing}|${confirming}`;
   useLayoutEffect(() => {
     setFlip('auto');
     setMaxH(null);
     setOffsetX(0);
-  }, [open, adding]);
+  }, [open, shape]);
 
   /**
    * Place the card against the day it belongs to, measured rather than
@@ -197,7 +373,7 @@ export function Calendar({
     if (c.left + w > viewport - margin) dx = viewport - margin - w - c.left;
     if (c.left + dx < margin) dx = margin - c.left;
     setOffsetX(Math.round(dx));
-  }, [open, flip, adding]);
+  }, [open, flip, shape]);
 
   /* Escape closes a pinned card wherever the focus happens to be — the form
      first, so a half-typed engagement is not thrown away by the same key that
@@ -206,43 +382,67 @@ export function Calendar({
     if (!pinned) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
-      if (adding) closeForm();
+      /* Back out one step at a time. The key that dismisses the card must not
+         also throw away a half-typed engagement, or answer a delete nobody
+         has confirmed. */
+      if (adding || editing) closeForm();
+      else if (confirming) setConfirming(null);
       else setPinned(null);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [pinned, adding]);
+  }, [pinned, adding, editing, confirming]);
 
+  /* Everything the card can have half-open: the form, the edit, and an
+     unanswered delete. Called wherever the card closes or moves to another
+     day, so nothing is left waiting on a day nobody is looking at. */
   function closeForm() {
     setAdding(null);
-    setDraft({ title: '', time: '', place: '', body: '' });
+    setEditing(null);
+    setConfirming(null);
+    setDraft(BLANK_DRAFT);
     setFormError(null);
   }
 
   function openForm(iso: string) {
     setPinned(iso);
     setAdding(iso);
-    setDraft({ title: '', time: '', place: '', body: '' });
+    setEditing(null);
+    setConfirming(null);
+    setDraft({ ...BLANK_DRAFT, date: iso });
     setFormError(null);
   }
 
-  async function addEngagement(iso: string) {
-    const title = draft.title.trim();
-    if (!title) {
-      setFormError('An engagement needs a title.');
-      titleRef.current?.focus();
-      return;
-    }
+  function openEdit(entry: CalendarEntry) {
+    setPinned(entry.date);
+    setAdding(null);
+    setEditing(entry.recordId);
+    setConfirming(null);
+    setDraft({
+      title: entry.title,
+      date: entry.date,
+      time: entry.time ?? '',
+      place: entry.place ?? '',
+      body: entry.detail ?? '',
+    });
+    setFormError(null);
+  }
+
+  /**
+   * The one place this screen writes.
+   *
+   * Returns the document the route wrote, so a caller can follow the record
+   * it just changed; null means nothing was written and the message is
+   * already on the form.
+   */
+  async function send(payload: Record<string, unknown>): Promise<SiteContent | null> {
     setSaving(true);
     setFormError(null);
     try {
       const res = await fetch('/api/admin/content', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'add-event',
-          event: { title, date: iso, time: draft.time, place: draft.place, body: draft.body },
-        }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -251,19 +451,63 @@ export function Calendar({
             ? 'The content store is not connected to this deployment.'
             : data.error === 'title_and_valid_date_required'
               ? 'A title and a valid date are both needed.'
-              : 'That did not save. Try again.',
+              : data.error === 'not_found'
+                ? 'That engagement is no longer in the calendar.'
+                : 'That did not save. Try again.',
         );
-        return;
+        return null;
       }
       if (data.content) setContent(data.content);
-      /* The card stays open on the day just filled, now showing what was
-         added, rather than closing and leaving the office to check. */
-      closeForm();
+      return (data.content as SiteContent) ?? null;
     } catch {
       setFormError('Could not reach the server.');
+      return null;
     } finally {
       setSaving(false);
     }
+  }
+
+  /** Add or edit, depending on which the form was opened for. */
+  async function saveEngagement(iso: string) {
+    const title = draft.title.trim();
+    if (!title) {
+      setFormError('An engagement needs a title.');
+      titleRef.current?.focus();
+      return;
+    }
+    const date = editing ? draft.date : iso;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      setFormError('That date will not do. Use the date field.');
+      return;
+    }
+    const event = { title, date, time: draft.time, place: draft.place, body: draft.body };
+    const written = await send(
+      editing
+        ? { action: 'set-event', id: editing, event }
+        : { action: 'add-event', event },
+    );
+    if (!written) return;
+    closeForm();
+    /* Follow the record. An engagement moved to another day would otherwise
+       vanish from the card the office is looking at, which reads as a delete. */
+    setPinned(date);
+    setCursor((c) => {
+      const y = Number(date.slice(0, 4));
+      const m = Number(date.slice(5, 7)) - 1;
+      return c.year === y && c.month === m ? c : { year: y, month: m };
+    });
+  }
+
+  async function removeEngagement(entry: CalendarEntry) {
+    const written = await send({ action: 'delete-event', id: entry.recordId });
+    if (!written) return;
+    setConfirming(null);
+    /* A day emptied by the delete has no card left to draw, and leaving it
+       pinned would cost the office a click it cannot see the reason for:
+       the next press on that cell would only be undoing a selection nothing
+       on screen shows. */
+    const left = entriesByDay(written).get(entry.date)?.length ?? 0;
+    if (left === 0) setPinned(null);
   }
 
   function step(by: number) {
@@ -273,6 +517,7 @@ export function Calendar({
     });
     setPinned(null);
     setHovered(null);
+    closeForm();
   }
 
   function goToday() {
@@ -281,6 +526,7 @@ export function Calendar({
       month: Number(today.slice(5, 7)) - 1,
     });
     setPinned(today);
+    closeForm();
   }
 
   /* Counted over the month on screen, not over the whole store, so the figure
@@ -293,8 +539,6 @@ export function Calendar({
     }
     return out;
   }, [cells, byDay]);
-
-  const openEntries = open ? (byDay.get(open) ?? []) : [];
 
   /* Everything still ahead, so the office has a list as well as a grid — a
      grid answers "what is on the 14th", a list answers "what is next". */
@@ -312,11 +556,6 @@ export function Calendar({
        calendar. */
     return days.slice(0, 5);
   }, [byDay, today]);
-
-  /* py-100 rather than py-75: at the smaller padding these were 34px tall,
-     and Cancel was 17px — fine with a mouse, not with a thumb. */
-  const formInput =
-    'w-full rounded-lg border border-white/10 bg-ebony px-100 py-100 text-xs text-ivory placeholder:text-ivory/25 focus:border-gold focus:outline-none';
 
   const navBtn =
     'rounded-lg border border-white/15 px-200 py-75 text-sm font-semibold text-ivory/75 transition-colors hover:border-gold hover:text-gold';
@@ -431,7 +670,7 @@ export function Calendar({
                       closeForm();
                     } else if (entries.length) {
                       setPinned(cell.iso);
-                      setAdding(null);
+                      closeForm();
                     } else {
                       /* Nothing to read on an empty day, so go straight to
                          the thing the click was for. */
@@ -535,105 +774,107 @@ export function Calendar({
                     </p>
                     {entries.length > 0 && (
                       <div className="mt-100 grid gap-75">
-                        {entries.map((e) => (
-                          <EntryCard key={e.id} entry={e} compact />
-                        ))}
+                        {entries.map((e) =>
+                          editing === e.recordId ? (
+                            /* The engagement is replaced by its own fields,
+                               in place, so it is plain which of several is
+                               being changed. */
+                            <EngagementForm
+                              key={e.id}
+                              idPrefix={`edit-${e.recordId}`}
+                              mode="edit"
+                              draft={draft}
+                              onChange={(patch) => setDraft((d) => ({ ...d, ...patch }))}
+                              onSubmit={() => void saveEngagement(cell.iso)}
+                              onCancel={closeForm}
+                              saving={saving}
+                              error={formError}
+                              titleRef={titleRef}
+                              className="rounded-xl border border-gold/40 bg-ebony p-100"
+                            />
+                          ) : (
+                            <div key={e.id}>
+                              <EntryCard entry={e} compact />
+                              {/* Only engagements are edited here. An update
+                                  is the record of something that happened and
+                                  a request belongs to the person who sent it;
+                                  both have their own screen, and both would
+                                  be the wrong thing to change from a calendar
+                                  card by mistake. */}
+                              {e.kind === 'event' && configured && (
+                                confirming === e.recordId ? (
+                                  <div className="mt-50 rounded-lg border border-crimson/40 bg-crimson/5 p-100">
+                                    <p className="text-[11px] leading-relaxed text-ivory/70">
+                                      Remove this engagement? It goes from the
+                                      public calendar too.
+                                    </p>
+                                    <div className="mt-75 flex items-center gap-75">
+                                      <button
+                                        type="button"
+                                        disabled={saving}
+                                        onClick={() => void removeEngagement(e)}
+                                        className="rounded-lg border border-crimson/60 px-100 py-75 text-[11px] font-semibold text-crimson transition-colors hover:bg-crimson/10 disabled:opacity-50"
+                                      >
+                                        {saving ? 'Removing…' : 'Remove it'}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setConfirming(null)}
+                                        className="rounded-lg px-100 py-75 text-[11px] font-semibold text-ivory/50 hover:text-ivory"
+                                      >
+                                        Keep it
+                                      </button>
+                                    </div>
+                                    {formError && (
+                                      <p role="alert" className="mt-75 text-[11px] text-crimson">
+                                        {formError}
+                                      </p>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="mt-50 flex items-center gap-100 px-50">
+                                    <button
+                                      type="button"
+                                      onClick={() => openEdit(e)}
+                                      className="text-[11px] font-semibold text-gold underline underline-offset-2 hover:text-[#e6c34d]"
+                                    >
+                                      Edit
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        closeForm();
+                                        setConfirming(e.recordId);
+                                      }}
+                                      className="text-[11px] font-semibold text-ivory/45 underline underline-offset-2 hover:text-crimson"
+                                    >
+                                      Delete
+                                    </button>
+                                  </div>
+                                )
+                              )}
+                            </div>
+                          ),
+                        )}
                       </div>
                     )}
+
                     {pinned === cell.iso && adding === cell.iso && (
-                      <form
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          void addEngagement(cell.iso);
-                        }}
+                      <EngagementForm
+                        idPrefix={`add-${cell.iso}`}
+                        mode="add"
+                        draft={draft}
+                        onChange={(patch) => setDraft((d) => ({ ...d, ...patch }))}
+                        onSubmit={() => void saveEngagement(cell.iso)}
+                        onCancel={closeForm}
+                        saving={saving}
+                        error={formError}
+                        titleRef={titleRef}
                         className={entries.length ? 'mt-200 border-t border-white/10 pt-200' : 'mt-100'}
-                      >
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ivory/50">
-                          New engagement
-                        </p>
-
-                        <label className="sr-only" htmlFor={`t-${cell.iso}`}>
-                          What it is
-                        </label>
-                        <input
-                          id={`t-${cell.iso}`}
-                          ref={titleRef}
-                          autoFocus
-                          value={draft.title}
-                          maxLength={120}
-                          placeholder="Durbar of Chiefs"
-                          onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
-                          className={formInput + ' mt-75'}
-                        />
-
-                        <div className="mt-75 grid grid-cols-2 gap-75">
-                          <div>
-                            <label className="sr-only" htmlFor={`tm-${cell.iso}`}>Time</label>
-                            <input
-                              id={`tm-${cell.iso}`}
-                              value={draft.time}
-                              maxLength={40}
-                              placeholder="10:00"
-                              onChange={(e) => setDraft((d) => ({ ...d, time: e.target.value }))}
-                              className={formInput}
-                            />
-                          </div>
-                          <div>
-                            <label className="sr-only" htmlFor={`pl-${cell.iso}`}>Place</label>
-                            <input
-                              id={`pl-${cell.iso}`}
-                              value={draft.place}
-                              maxLength={120}
-                              placeholder="Palace grounds"
-                              onChange={(e) => setDraft((d) => ({ ...d, place: e.target.value }))}
-                              className={formInput}
-                            />
-                          </div>
-                        </div>
-
-                        <label className="sr-only" htmlFor={`bd-${cell.iso}`}>Detail</label>
-                        <textarea
-                          id={`bd-${cell.iso}`}
-                          rows={2}
-                          value={draft.body}
-                          maxLength={1200}
-                          placeholder="A sentence for the public calendar."
-                          onChange={(e) => setDraft((d) => ({ ...d, body: e.target.value }))}
-                          className={formInput + ' mt-75 resize-y'}
-                        />
-
-                        {formError && (
-                          <p role="alert" className="mt-75 text-[11px] text-crimson">
-                            {formError}
-                          </p>
-                        )}
-
-                        {/* Said plainly, because it is: this is the same list
-                            the public calendar prints. */}
-                        <p className="mt-75 text-[10px] leading-relaxed text-ivory/40">
-                          Goes on the public calendar within about half a minute.
-                        </p>
-
-                        <div className="mt-100 flex items-center gap-75">
-                          <button
-                            type="submit"
-                            disabled={saving || !draft.title.trim()}
-                            className="rounded-lg bg-gold px-200 py-100 text-[11px] font-semibold text-ebony transition-all hover:bg-[#e6c34d] disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            {saving ? 'Saving…' : 'Add it'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={closeForm}
-                            className="rounded-lg px-100 py-100 text-[11px] font-semibold text-ivory/50 hover:text-ivory"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </form>
+                      />
                     )}
 
-                    {pinned === cell.iso && adding !== cell.iso && (
+                    {pinned === cell.iso && adding !== cell.iso && !editing && (
                       <div className="mt-100 flex flex-wrap items-center justify-between gap-100">
                         {configured ? (
                           <button
@@ -680,8 +921,9 @@ export function Calendar({
 
       <p className="mt-200 text-xs leading-relaxed text-ivory/45">
         Hover a day to see what is on it, or tap it to keep the card open. Tap
-        an empty day to put an engagement on it. Updates and requests are kept
-        on{' '}
+        an empty day to put an engagement on it, and use Edit or Delete on an
+        engagement to change or remove it — including moving it to another
+        day. Updates and requests are kept on{' '}
         <Link href="/admin/content" className="text-gold underline underline-offset-2">
           Manage the site
         </Link>{' '}
