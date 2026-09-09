@@ -95,8 +95,18 @@ function EntryCard({ entry, compact }: { entry: CalendarEntry; compact?: boolean
   );
 }
 
-export function Calendar({ content }: { content: SiteContent }) {
+export function Calendar({
+  initial,
+  configured,
+}: {
+  initial: SiteContent;
+  configured: boolean;
+}) {
   const today = todayISO();
+  /* The calendar writes now, so it holds the document rather than reading a
+     snapshot: adding an engagement has to put it on the grid at once, without
+     a reload the office would not know to do. */
+  const [content, setContent] = useState(initial);
   const byDay = useMemo(() => entriesByDay(content), [content]);
 
   /* One piece of state, not two. Held together because the month arrows move
@@ -123,15 +133,24 @@ export function Calendar({ content }: { content: SiteContent }) {
   const [maxH, setMaxH] = useState<number | null>(null);
   const [offsetX, setOffsetX] = useState(0);
 
+  /* The day whose "add an engagement" form is open, and what is in it. */
+  const [adding, setAdding] = useState<string | null>(null);
+  const [draft, setDraft] = useState({ title: '', time: '', place: '', body: '' });
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const titleRef = useRef<HTMLInputElement>(null);
+
   const cells = useMemo(() => monthGrid(year, month), [year, month]);
   const open = pinned ?? hovered;
 
-  /* A new day means a new measurement. */
+  /* A new day, or the form opening, means a new measurement: the card is a
+     different height either way, and a placement worked out for the old one
+     leaves the new one hanging off the screen. */
   useLayoutEffect(() => {
     setFlip('auto');
     setMaxH(null);
     setOffsetX(0);
-  }, [open]);
+  }, [open, adding]);
 
   /**
    * Place the card against the day it belongs to, measured rather than
@@ -178,17 +197,74 @@ export function Calendar({ content }: { content: SiteContent }) {
     if (c.left + w > viewport - margin) dx = viewport - margin - w - c.left;
     if (c.left + dx < margin) dx = margin - c.left;
     setOffsetX(Math.round(dx));
-  }, [open, flip]);
+  }, [open, flip, adding]);
 
-  /* Escape closes a pinned card wherever the focus happens to be. */
+  /* Escape closes a pinned card wherever the focus happens to be — the form
+     first, so a half-typed engagement is not thrown away by the same key that
+     dismisses the card. */
   useEffect(() => {
     if (!pinned) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setPinned(null);
+      if (e.key !== 'Escape') return;
+      if (adding) closeForm();
+      else setPinned(null);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [pinned]);
+  }, [pinned, adding]);
+
+  function closeForm() {
+    setAdding(null);
+    setDraft({ title: '', time: '', place: '', body: '' });
+    setFormError(null);
+  }
+
+  function openForm(iso: string) {
+    setPinned(iso);
+    setAdding(iso);
+    setDraft({ title: '', time: '', place: '', body: '' });
+    setFormError(null);
+  }
+
+  async function addEngagement(iso: string) {
+    const title = draft.title.trim();
+    if (!title) {
+      setFormError('An engagement needs a title.');
+      titleRef.current?.focus();
+      return;
+    }
+    setSaving(true);
+    setFormError(null);
+    try {
+      const res = await fetch('/api/admin/content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'add-event',
+          event: { title, date: iso, time: draft.time, place: draft.place, body: draft.body },
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setFormError(
+          data.error === 'store_not_connected'
+            ? 'The content store is not connected to this deployment.'
+            : data.error === 'title_and_valid_date_required'
+              ? 'A title and a valid date are both needed.'
+              : 'That did not save. Try again.',
+        );
+        return;
+      }
+      if (data.content) setContent(data.content);
+      /* The card stays open on the day just filled, now showing what was
+         added, rather than closing and leaving the office to check. */
+      closeForm();
+    } catch {
+      setFormError('Could not reach the server.');
+    } finally {
+      setSaving(false);
+    }
+  }
 
   function step(by: number) {
     setCursor((c) => {
@@ -236,6 +312,11 @@ export function Calendar({ content }: { content: SiteContent }) {
        calendar. */
     return days.slice(0, 5);
   }, [byDay, today]);
+
+  /* py-100 rather than py-75: at the smaller padding these were 34px tall,
+     and Cancel was 17px — fine with a mouse, not with a thumb. */
+  const formInput =
+    'w-full rounded-lg border border-white/10 bg-ebony px-100 py-100 text-xs text-ivory placeholder:text-ivory/25 focus:border-gold focus:outline-none';
 
   const navBtn =
     'rounded-lg border border-white/15 px-200 py-75 text-sm font-semibold text-ivory/75 transition-colors hover:border-gold hover:text-gold';
@@ -335,28 +416,54 @@ export function Calendar({ content }: { content: SiteContent }) {
                   cell.inMonth ? '' : 'opacity-35',
                 ].join(' ')}
               >
-                {entries.length > 0 ? (
-                  <button
-                    type="button"
-                    onMouseEnter={() => setHovered(cell.iso)}
-                    onFocus={() => setHovered(cell.iso)}
-                    onBlur={() => setHovered(null)}
-                    onClick={() => setPinned((p) => (p === cell.iso ? null : cell.iso))}
-                    aria-expanded={isOpen}
-                    aria-label={`${longDate(cell.iso)}, ${entries.length} ${entries.length === 1 ? 'entry' : 'entries'}`}
+                {/* Every day is a control, not only the ones with something
+                    on them: an empty day is where an engagement most often
+                    needs to go, and it used to be the one thing on this page
+                    that could not be clicked. */}
+                <button
+                  type="button"
+                  onMouseEnter={() => entries.length && setHovered(cell.iso)}
+                  onFocus={() => entries.length && setHovered(cell.iso)}
+                  onBlur={() => setHovered(null)}
+                  onClick={() => {
+                    if (pinned === cell.iso) {
+                      setPinned(null);
+                      closeForm();
+                    } else if (entries.length) {
+                      setPinned(cell.iso);
+                      setAdding(null);
+                    } else {
+                      /* Nothing to read on an empty day, so go straight to
+                         the thing the click was for. */
+                      openForm(cell.iso);
+                    }
+                  }}
+                  aria-expanded={isOpen}
+                  aria-label={
+                    entries.length
+                      ? `${longDate(cell.iso)}, ${entries.length} ${entries.length === 1 ? 'entry' : 'entries'}`
+                      : `${longDate(cell.iso)}, nothing in the calendar. Add an engagement`
+                  }
+                  className={[
+                    'group flex h-full w-full flex-col items-start gap-50 rounded-lg text-left transition-colors',
+                    isOpen ? 'bg-white/10' : 'hover:bg-white/5',
+                  ].join(' ')}
+                >
+                  <span
                     className={[
-                      'flex h-full w-full flex-col items-start gap-50 rounded-lg text-left transition-colors',
-                      isOpen ? 'bg-white/10' : 'hover:bg-white/5',
+                      'flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums',
+                      isToday
+                        ? 'bg-gold text-ebony'
+                        : entries.length
+                          ? 'text-ivory/80'
+                          : 'text-ivory/35',
                     ].join(' ')}
                   >
-                    <span
-                      className={[
-                        'flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums',
-                        isToday ? 'bg-gold text-ebony' : 'text-ivory/80',
-                      ].join(' ')}
-                    >
-                      {cell.day}
-                    </span>
+                    {cell.day}
+                  </span>
+
+                  {entries.length > 0 ? (
+                    <>
                     {/* Titles where there is room, dots where there is not. */}
                     <span className="hidden w-full min-w-0 flex-col gap-25 sm:flex">
                       {entries.slice(0, 2).map((e) => (
@@ -386,19 +493,24 @@ export function Calendar({ content }: { content: SiteContent }) {
                         </span>
                       )}
                     </span>
-                  </button>
-                ) : (
-                  <span
-                    className={[
-                      'flex h-[22px] w-[22px] items-center justify-center rounded-full text-xs font-semibold tabular-nums',
-                      isToday ? 'bg-gold text-ebony' : 'text-ivory/35',
-                    ].join(' ')}
-                  >
-                    {cell.day}
-                  </span>
-                )}
+                    </>
+                  ) : (
+                    /* A quiet plus, shown on hover and whenever the day is
+                       open, so the grid does not become a field of buttons
+                       shouting to be pressed. */
+                    <span
+                      aria-hidden="true"
+                      className={[
+                        'mt-auto hidden text-lg leading-none text-ivory/30 transition-opacity sm:block',
+                        isOpen ? 'opacity-100 text-gold' : 'opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100',
+                      ].join(' ')}
+                    >
+                      +
+                    </span>
+                  )}
+                </button>
 
-                {isOpen && entries.length > 0 && (
+                {isOpen && (entries.length > 0 || adding === cell.iso) && (
                   <div
                     ref={cardRef}
                     style={{
@@ -421,26 +533,141 @@ export function Calendar({ content }: { content: SiteContent }) {
                     <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gold">
                       {longDate(cell.iso)}
                     </p>
-                    <div className="mt-100 grid gap-75">
-                      {entries.map((e) => (
-                        <EntryCard key={e.id} entry={e} compact />
-                      ))}
-                    </div>
-                    {pinned === cell.iso && (
-                      <div className="mt-100 flex items-center justify-between gap-100">
-                        <Link
-                          href={entries[0].href}
-                          className="text-[11px] font-semibold text-gold underline underline-offset-2"
-                        >
-                          Open the record
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={() => setPinned(null)}
-                          className="text-[11px] font-semibold text-ivory/50 hover:text-ivory"
-                        >
-                          Close
-                        </button>
+                    {entries.length > 0 && (
+                      <div className="mt-100 grid gap-75">
+                        {entries.map((e) => (
+                          <EntryCard key={e.id} entry={e} compact />
+                        ))}
+                      </div>
+                    )}
+                    {pinned === cell.iso && adding === cell.iso && (
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          void addEngagement(cell.iso);
+                        }}
+                        className={entries.length ? 'mt-200 border-t border-white/10 pt-200' : 'mt-100'}
+                      >
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ivory/50">
+                          New engagement
+                        </p>
+
+                        <label className="sr-only" htmlFor={`t-${cell.iso}`}>
+                          What it is
+                        </label>
+                        <input
+                          id={`t-${cell.iso}`}
+                          ref={titleRef}
+                          autoFocus
+                          value={draft.title}
+                          maxLength={120}
+                          placeholder="Durbar of Chiefs"
+                          onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
+                          className={formInput + ' mt-75'}
+                        />
+
+                        <div className="mt-75 grid grid-cols-2 gap-75">
+                          <div>
+                            <label className="sr-only" htmlFor={`tm-${cell.iso}`}>Time</label>
+                            <input
+                              id={`tm-${cell.iso}`}
+                              value={draft.time}
+                              maxLength={40}
+                              placeholder="10:00"
+                              onChange={(e) => setDraft((d) => ({ ...d, time: e.target.value }))}
+                              className={formInput}
+                            />
+                          </div>
+                          <div>
+                            <label className="sr-only" htmlFor={`pl-${cell.iso}`}>Place</label>
+                            <input
+                              id={`pl-${cell.iso}`}
+                              value={draft.place}
+                              maxLength={120}
+                              placeholder="Palace grounds"
+                              onChange={(e) => setDraft((d) => ({ ...d, place: e.target.value }))}
+                              className={formInput}
+                            />
+                          </div>
+                        </div>
+
+                        <label className="sr-only" htmlFor={`bd-${cell.iso}`}>Detail</label>
+                        <textarea
+                          id={`bd-${cell.iso}`}
+                          rows={2}
+                          value={draft.body}
+                          maxLength={1200}
+                          placeholder="A sentence for the public calendar."
+                          onChange={(e) => setDraft((d) => ({ ...d, body: e.target.value }))}
+                          className={formInput + ' mt-75 resize-y'}
+                        />
+
+                        {formError && (
+                          <p role="alert" className="mt-75 text-[11px] text-crimson">
+                            {formError}
+                          </p>
+                        )}
+
+                        {/* Said plainly, because it is: this is the same list
+                            the public calendar prints. */}
+                        <p className="mt-75 text-[10px] leading-relaxed text-ivory/40">
+                          Goes on the public calendar within about half a minute.
+                        </p>
+
+                        <div className="mt-100 flex items-center gap-75">
+                          <button
+                            type="submit"
+                            disabled={saving || !draft.title.trim()}
+                            className="rounded-lg bg-gold px-200 py-100 text-[11px] font-semibold text-ebony transition-all hover:bg-[#e6c34d] disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {saving ? 'Saving…' : 'Add it'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={closeForm}
+                            className="rounded-lg px-100 py-100 text-[11px] font-semibold text-ivory/50 hover:text-ivory"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    )}
+
+                    {pinned === cell.iso && adding !== cell.iso && (
+                      <div className="mt-100 flex flex-wrap items-center justify-between gap-100">
+                        {configured ? (
+                          <button
+                            type="button"
+                            onClick={() => openForm(cell.iso)}
+                            className="rounded-lg border border-gold/40 px-100 py-75 text-[11px] font-semibold text-gold transition-colors hover:bg-gold/10"
+                          >
+                            + Engagement
+                          </button>
+                        ) : (
+                          <span className="text-[11px] text-ivory/40">
+                            Store not connected
+                          </span>
+                        )}
+                        <div className="flex items-center gap-100">
+                          {entries.length > 0 && (
+                            <Link
+                              href={entries[0].href}
+                              className="text-[11px] font-semibold text-gold underline underline-offset-2"
+                            >
+                              Open the record
+                            </Link>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPinned(null);
+                              closeForm();
+                            }}
+                            className="rounded-lg px-100 py-75 text-[11px] font-semibold text-ivory/50 hover:text-ivory"
+                          >
+                            Close
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -452,8 +679,9 @@ export function Calendar({ content }: { content: SiteContent }) {
       </div>
 
       <p className="mt-200 text-xs leading-relaxed text-ivory/45">
-        Hover a day to see what is on it, or tap it to keep the card open.
-        Everything here is added on{' '}
+        Hover a day to see what is on it, or tap it to keep the card open. Tap
+        an empty day to put an engagement on it. Updates and requests are kept
+        on{' '}
         <Link href="/admin/content" className="text-gold underline underline-offset-2">
           Manage the site
         </Link>{' '}

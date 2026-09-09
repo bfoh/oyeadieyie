@@ -1,5 +1,5 @@
 import { Calendar } from '@/components/admin/Calendar';
-import { readContent } from '@/lib/store';
+import { readContent, storeConfigured } from '@/lib/store';
 
 /* Always fresh: an aide checking a date against the calendar must be looking
    at what the office saved a minute ago, not at a cached copy. */
@@ -19,10 +19,10 @@ export default async function CalendarPage() {
         <p className="mt-200 max-w-measure text-base leading-relaxed text-ivory/65">
           Engagements ahead, work already recorded, and the dates the public has
           asked for — on one grid, so a date can be checked before anyone
-          replies to anyone.
+          replies to anyone. Tap a day to put an engagement on it.
         </p>
       </header>
-      <Calendar content={content} />
+      <Calendar initial={content} configured={storeConfigured()} />
     </>
   );
 }
