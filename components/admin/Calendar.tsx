@@ -222,12 +222,19 @@ export function Calendar({ content }: { content: SiteContent }) {
 
   /* Everything still ahead, so the office has a list as well as a grid — a
      grid answers "what is on the 14th", a list answers "what is next". */
+  /* Grouped by day, not one heading per entry: four engagements on the same
+     Saturday printed that Saturday's date four times. */
   const ahead = useMemo(() => {
-    const out: CalendarEntry[] = [];
+    const days: { date: string; entries: CalendarEntry[] }[] = [];
     for (const [day, list] of byDay) {
-      if (day >= today) out.push(...list.filter((e) => e.kind !== 'update'));
+      if (day < today) continue;
+      const entries = list.filter((e) => e.kind !== 'update');
+      if (entries.length) days.push({ date: day, entries });
     }
-    return out.sort((a, b) => a.date.localeCompare(b.date)).slice(0, 8);
+    days.sort((a, b) => a.date.localeCompare(b.date));
+    /* A handful of days, so the list stays a glance rather than a second
+       calendar. */
+    return days.slice(0, 5);
   }, [byDay, today]);
 
   const navBtn =
@@ -236,19 +243,26 @@ export function Calendar({ content }: { content: SiteContent }) {
   return (
     <>
       {/* ---- Month header ------------------------------------------ */}
-      <div className="flex flex-wrap items-center justify-between gap-200">
-        <div className="flex items-center gap-100">
+      {/* One row at every width. At 390 the month label at its desktop size
+          pushed "Today" onto a line of its own, where it read as something
+          left behind rather than a control. */}
+      <div className="flex items-center justify-between gap-100">
+        <div className="flex min-w-0 items-center gap-75 sm:gap-100">
           <button type="button" onClick={() => step(-1)} className={navBtn} aria-label="Previous month">
             ←
           </button>
-          <h2 className="min-w-[9.5rem] text-center font-display text-2xl font-600 text-ivory sm:text-3xl">
+          <h2 className="min-w-[7.5rem] whitespace-nowrap text-center font-display text-xl font-600 text-ivory sm:min-w-[9.5rem] sm:text-3xl">
             {monthLabel(year, month)}
           </h2>
           <button type="button" onClick={() => step(1)} className={navBtn} aria-label="Next month">
             →
           </button>
         </div>
-        <button type="button" onClick={goToday} className={navBtn}>
+        <button
+          type="button"
+          onClick={goToday}
+          className="shrink-0 rounded-lg border border-white/15 px-100 py-75 text-xs font-semibold text-ivory/75 transition-colors hover:border-gold hover:text-gold sm:px-200 sm:text-sm"
+        >
           Today
         </button>
       </div>
@@ -359,13 +373,18 @@ export function Calendar({ content }: { content: SiteContent }) {
                         </span>
                       )}
                     </span>
-                    <span className="flex gap-25 sm:hidden">
+                    <span className="flex items-center gap-25 sm:hidden">
                       {entries.slice(0, 3).map((e) => (
                         <span
                           key={e.id}
                           className={`h-[6px] w-[6px] rounded-full ${KIND_STYLE[e.kind].dot}`}
                         />
                       ))}
+                      {entries.length > 3 && (
+                        <span className="text-[9px] font-semibold leading-none text-ivory/45">
+                          +{entries.length - 3}
+                        </span>
+                      )}
                     </span>
                   </button>
                 ) : (
@@ -454,13 +473,15 @@ export function Calendar({ content }: { content: SiteContent }) {
             the site and it appears here and on the public page.
           </p>
         ) : (
-          <ul className="mt-200 grid gap-200 sm:grid-cols-2">
-            {ahead.map((e) => (
-              <li key={e.id} className="grid gap-100">
+          <ul className="mt-200 grid gap-300 sm:grid-cols-2">
+            {ahead.map((day) => (
+              <li key={day.date} className="grid gap-100">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gold">
-                  {longDate(e.date)}
+                  {longDate(day.date)}
                 </p>
-                <EntryCard entry={e} />
+                {day.entries.map((e) => (
+                  <EntryCard key={e.id} entry={e} />
+                ))}
               </li>
             ))}
           </ul>
