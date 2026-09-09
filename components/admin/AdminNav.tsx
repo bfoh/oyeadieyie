@@ -53,7 +53,7 @@ export function AdminNav() {
           open ? 'block border-b' : 'hidden',
         ].join(' ')}
       >
-        <div className="hidden items-center gap-150 border-b border-white/10 px-300 py-400 lg:flex">
+        <div className="hidden items-center gap-100 border-b border-white/10 px-300 py-400 lg:flex">
           <Crest className="h-[30px] w-[30px] shrink-0 text-gold" />
           <span className="font-wordmark text-[11px] font-600 uppercase leading-tight tracking-[0.16em] text-ivory">
             {CHIEF.shortName}

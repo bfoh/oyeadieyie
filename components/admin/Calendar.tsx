@@ -62,7 +62,7 @@ const KIND_STYLE: Record<EntryKind, { chip: string; dot: string; card: string }>
 function EntryCard({ entry, compact }: { entry: CalendarEntry; compact?: boolean }) {
   const s = KIND_STYLE[entry.kind];
   return (
-    <div className={`rounded-xl border bg-ebony ${compact ? 'p-150' : 'p-200'} ${s.card}`}>
+    <div className={`rounded-xl border bg-ebony ${compact ? 'p-100' : 'p-200'} ${s.card}`}>
       <div className="flex flex-wrap items-center gap-100">
         <span className={`rounded-full border px-100 py-25 text-[11px] font-semibold ${s.chip}`}>
           {KIND_LABEL[entry.kind]}
@@ -289,7 +289,7 @@ export function Calendar({ content }: { content: SiteContent }) {
           {WEEKDAYS.map((w) => (
             <div
               key={w}
-              className="px-100 py-150 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-ivory/40 sm:text-xs"
+              className="px-100 py-100 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-ivory/40 sm:text-xs"
             >
               {/* One letter is enough on a phone; the full name has nowhere
                   to go in a seventh of 350px. */}
@@ -402,13 +402,13 @@ export function Calendar({ content }: { content: SiteContent }) {
                     <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gold">
                       {longDate(cell.iso)}
                     </p>
-                    <div className="mt-150 grid gap-75">
+                    <div className="mt-100 grid gap-75">
                       {entries.map((e) => (
                         <EntryCard key={e.id} entry={e} compact />
                       ))}
                     </div>
                     {pinned === cell.iso && (
-                      <div className="mt-150 flex items-center justify-between gap-100">
+                      <div className="mt-100 flex items-center justify-between gap-100">
                         <Link
                           href={entries[0].href}
                           className="text-[11px] font-semibold text-gold underline underline-offset-2"
@@ -454,7 +454,7 @@ export function Calendar({ content }: { content: SiteContent }) {
             the site and it appears here and on the public page.
           </p>
         ) : (
-          <ul className="mt-200 grid gap-150 sm:grid-cols-2">
+          <ul className="mt-200 grid gap-200 sm:grid-cols-2">
             {ahead.map((e) => (
               <li key={e.id} className="grid gap-100">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gold">

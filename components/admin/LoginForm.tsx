@@ -41,7 +41,7 @@ export function LoginForm({ configured }: { configured: boolean }) {
 
   if (!configured) {
     return (
-      <div className="mt-400 rounded-2xl border border-crimson/40 bg-crimson/5 p-300">
+      <div className="mt-400 rounded-2xl border border-crimson/40 bg-crimson/5 p-300 text-left">
         <p className="text-sm font-semibold text-ivory">The admin is not switched on</p>
         <p className="mt-100 text-sm leading-relaxed text-ivory/65">
           Set <code className="rounded bg-black/40 px-50 text-gold">ADMIN_PASSWORD</code>{' '}
@@ -55,8 +55,11 @@ export function LoginForm({ configured }: { configured: boolean }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="mt-400" noValidate>
-      <label htmlFor="password" className="block text-sm font-semibold text-ivory">
+    <form onSubmit={onSubmit} className="mt-500" noValidate>
+      <label
+        htmlFor="password"
+        className="block text-xs font-semibold uppercase tracking-[0.14em] text-ivory/60"
+      >
         Password
       </label>
       <input
@@ -69,7 +72,9 @@ export function LoginForm({ configured }: { configured: boolean }) {
         aria-invalid={Boolean(error)}
         aria-describedby={error ? 'login-error' : undefined}
         className={[
-          'mt-75 w-full rounded-xl border bg-ebony-raised px-200 py-100 text-base text-ivory transition-colors focus:outline-none',
+          /* Centred with the rest of the card, and tall enough to be a
+             comfortable tap target on a phone. */
+          'mt-100 w-full rounded-xl border bg-ebony-raised px-200 py-200 text-center text-base text-ivory transition-colors focus:outline-none',
           error ? 'border-crimson' : 'border-white/10 focus:border-gold',
         ].join(' ')}
       />
@@ -81,7 +86,7 @@ export function LoginForm({ configured }: { configured: boolean }) {
       <button
         type="submit"
         disabled={busy || password.length === 0}
-        className="mt-300 w-full rounded-xl bg-gold px-200 py-100 text-base font-semibold text-ebony transition-all hover:bg-[#e6c34d] disabled:cursor-not-allowed disabled:opacity-50"
+        className="mt-200 w-full rounded-xl bg-gold px-200 py-200 text-base font-semibold text-ebony transition-all hover:bg-[#e6c34d] disabled:cursor-not-allowed disabled:opacity-50"
       >
         {busy ? 'Checking…' : 'Enter'}
       </button>
