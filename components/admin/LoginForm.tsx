@@ -3,10 +3,24 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-export function LoginForm({ configured }: { configured: boolean }) {
+/**
+ * The form never asks, at render time, whether the deployment has a password.
+ *
+ * It used to be handed a `configured` boolean from the server and, when that
+ * was false, it rendered "The admin is not switched on" instead of the form.
+ * That answer is a fact about the running deployment baked into HTML, and HTML
+ * gets cached — by the CDN, by the phone's browser, by a page restored from
+ * the back/forward cache. The office kept meeting a months-old "not switched
+ * on" on a phone while the same URL showed the form on a desktop.
+ *
+ * So the form always renders, and the only thing that can say the admin is not
+ * switched on is the login route itself, answered live on submit. A stale copy
+ * of this page is now harmless: it asks the server, and the server is current.
+ */
+export function LoginForm() {
   const router = useRouter();
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<React.ReactNode>(null);
   const [busy, setBusy] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
@@ -26,32 +40,26 @@ export function LoginForm({ configured }: { configured: boolean }) {
       }
       const data = await res.json().catch(() => ({}));
       setError(
-        data.error === 'not_configured'
-          ? 'No admin password is set on this deployment yet.'
-          : data.error === 'too_many_attempts'
-            ? 'Too many attempts. Wait a quarter of an hour and try again.'
-            : 'That password is not right.',
+        data.error === 'not_configured' ? (
+          <>
+            The admin is not switched on. Set{' '}
+            <code className="rounded bg-black/40 px-50 text-gold">
+              ADMIN_PASSWORD
+            </code>{' '}
+            in the deployment&apos;s environment variables, at least eight
+            characters, then try again.
+          </>
+        ) : data.error === 'too_many_attempts' ? (
+          'Too many attempts. Wait a quarter of an hour and try again.'
+        ) : (
+          'That password is not right.'
+        ),
       );
     } catch {
       setError('Could not reach the server. Try again.');
     } finally {
       setBusy(false);
     }
-  }
-
-  if (!configured) {
-    return (
-      <div className="mt-400 rounded-2xl border border-crimson/40 bg-crimson/5 p-300 text-left">
-        <p className="text-sm font-semibold text-ivory">The admin is not switched on</p>
-        <p className="mt-100 text-sm leading-relaxed text-ivory/65">
-          Set <code className="rounded bg-black/40 px-50 text-gold">ADMIN_PASSWORD</code>{' '}
-          in the deployment&apos;s environment variables, at least eight
-          characters, then reload. Until it is set nothing here will open, which
-          is deliberate: a default password on a public address is the same as
-          no password at all.
-        </p>
-      </div>
-    );
   }
 
   return (

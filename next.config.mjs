@@ -31,6 +31,18 @@ const nextConfig = {
         ],
       },
       {
+        /* The admin is behind a password and its pages report on the state of
+           the running deployment, so no cache — CDN or phone — may hold a copy.
+           A stale admin page is not merely out of date, it is wrong. */
+        source: '/admin/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'private, no-store, max-age=0, must-revalidate',
+          },
+        ],
+      },
+      {
         /* The press pack is rebuilt in place whenever the photography or the
            biography changes, so it is cached for a day, not a year. */
         source: '/press/:path*',

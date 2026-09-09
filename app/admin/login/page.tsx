@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { isConfigured } from '@/lib/admin-auth';
 import { LoginForm } from '@/components/admin/LoginForm';
 import { CHIEF } from '@/lib/content';
 import { Crest } from '@/components/Crest';
@@ -10,17 +9,16 @@ export const metadata: Metadata = {
 };
 
 /**
- * Rendered on every request, never prerendered.
+ * This page no longer reads the environment at all.
  *
- * `isConfigured()` reads ADMIN_PASSWORD out of the environment, which is a
- * fact about the running deployment. Next prerendered this page to a static
- * login.html at build time, so that question was answered once during the
- * build and then served to everybody from the edge cache — the office opened
- * the admin on a phone and was told "The admin is not switched on" from a
- * copy over ten hours old, while a desktop with a newer copy showed the form.
- * A page whose content depends on the runtime environment must not be static.
+ * It used to call `isConfigured()` and render either the form or a "not
+ * switched on" notice. Marking it `force-dynamic` fixed that for the CDN but
+ * not for the device: a phone that had already been handed the old static
+ * HTML kept showing the notice from its own cache. The page is now the same
+ * for every deployment whether or not a password is set, so there is nothing
+ * left for a cache anywhere to get wrong; the password check happens in
+ * /api/admin/login, which is never cached.
  */
-export const dynamic = 'force-dynamic';
 
 export default function AdminLogin() {
   return (
@@ -50,7 +48,7 @@ export default function AdminLogin() {
           the stool&apos;s name.
         </p>
 
-        <LoginForm configured={isConfigured()} />
+        <LoginForm />
       </div>
     </main>
   );
