@@ -291,6 +291,45 @@ export function Calendar({
   /* Two separate states on purpose — see the note above the component. */
   const [hovered, setHovered] = useState<string | null>(null);
   const [pinned, setPinned] = useState<string | null>(null);
+
+  /**
+   * Only a mouse peeks.
+   *
+   * A finger cannot hover, but it still produces an enter event on the way
+   * into a tap. The card would mount under the finger between the press and
+   * the release, and the release then landed on whatever the card had
+   * displaced — a day cell halfway across the grid — so no click ever reached
+   * the button the tap was aimed at, and the day it belonged to closed
+   * instead. Roughly one tap in two on Edit and Delete was lost that way.
+   *
+   * The test is the pointer that raised this very event, not a media query:
+   * `(hover: hover)` is a claim about the device, it is false in some browsers
+   * that plainly do have a mouse, and a laptop with a touchscreen answers yes
+   * to it with a finger on the glass. `pointerType` is the browser telling us
+   * what actually touched the screen this time.
+   */
+  function peek(e: React.PointerEvent, iso: string | null) {
+    if (e.pointerType === 'mouse') setHovered(iso);
+  }
+
+  /**
+   * Where the press that produced a click began.
+   *
+   * A press that starts on Edit or Delete and finishes anywhere else fires its
+   * click on whatever ancestor the two have in common, which can be a day cell
+   * — and a day cell reads that as "close me". The card is not a place a press
+   * can escape from, so a click whose press began inside it is not a click on
+   * the grid.
+   */
+  const pressedInCard = useRef(false);
+  useEffect(() => {
+    const down = (e: PointerEvent) => {
+      const t = e.target as Element | null;
+      pressedInCard.current = Boolean(t?.closest?.('[data-day-card]'));
+    };
+    document.addEventListener('pointerdown', down, true);
+    return () => document.removeEventListener('pointerdown', down, true);
+  }, []);
   const gridRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   /* Which way the detail card opens. The row it sits in is a good first
@@ -617,7 +656,7 @@ export function Calendar({
            the detail card is absolutely positioned inside a cell and is meant
            to extend past the grid. Clipping the container clips the card. */
         className="mt-300 rounded-2xl border border-white/10 bg-ebony-raised"
-        onMouseLeave={() => setHovered(null)}
+        onPointerLeave={(e) => peek(e, null)}
       >
         <div className="grid grid-cols-7 border-b border-white/10">
           {WEEKDAYS.map((w) => (
@@ -647,7 +686,7 @@ export function Calendar({
             return (
               <div
                 key={cell.iso}
-                onMouseEnter={() => setHovered(entries.length ? cell.iso : null)}
+                onPointerEnter={(e) => peek(e, entries.length ? cell.iso : null)}
                 className={[
                   'relative min-h-[76px] border-b border-r border-white/5 p-75 sm:min-h-[104px] sm:p-100',
                   col === 6 ? 'border-r-0' : '',
@@ -661,10 +700,18 @@ export function Calendar({
                     that could not be clicked. */}
                 <button
                   type="button"
-                  onMouseEnter={() => entries.length && setHovered(cell.iso)}
+                  onPointerEnter={(e) => entries.length && peek(e, cell.iso)}
                   onFocus={() => entries.length && setHovered(cell.iso)}
                   onBlur={() => setHovered(null)}
                   onClick={() => {
+                    /* The press began on a control inside the open card; the
+                       click only landed here because the two share an
+                       ancestor. Closing the day would be the opposite of what
+                       was asked for. */
+                    if (pressedInCard.current) {
+                      pressedInCard.current = false;
+                      return;
+                    }
                     if (pinned === cell.iso) {
                       setPinned(null);
                       closeForm();
@@ -757,10 +804,11 @@ export function Calendar({
                       ...(maxH ? { maxHeight: maxH } : null),
                     }}
                     role="dialog"
+                    data-day-card=""
                     aria-label={longDate(cell.iso)}
                     /* The card belongs to the day, so keep it open while the
                        pointer is on the card itself. */
-                    onMouseEnter={() => setHovered(cell.iso)}
+                    onPointerEnter={(e) => peek(e, cell.iso)}
                     className={[
                       /* A day can carry several entries; cap the card and let
                          it scroll rather than run off the bottom of the
