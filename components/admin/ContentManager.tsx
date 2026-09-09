@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { SiteContent } from '@/lib/store';
 import { WritingAssistant } from './WritingAssistant';
 import { AttachPhoto } from './AttachPhoto';
@@ -10,11 +10,16 @@ import { HOME_LIMITS } from '@/lib/limits';
 /**
  * What the office can change without a developer.
  *
- * Updates and events are added and removed here; photographs are uploaded to
- * the gallery and deleted from it; the contact details fill the blanks the
- * public page currently omits. Everything else — the projects, the adinkra,
- * the biography — stays in the repository, because that is the record rather
- * than the noticeboard and it should go through review.
+ * Updates and events are posted, corrected and removed here; photographs are
+ * uploaded to the gallery and deleted from it; the contact details fill the
+ * blanks the public page currently omits. Everything else — the projects, the
+ * adinkra, the biography — stays in the repository, because that is the record
+ * rather than the noticeboard and it should go through review.
+ *
+ * Correcting is done in the same panel that posts, loaded with what is already
+ * there. Two forms would be two places to add a field to and one place to
+ * forget, and the office would lose the photograph picker and the writing
+ * assistant on whichever copy was written second.
  */
 
 type Tab = 'updates' | 'events' | 'gallery' | 'contact';
@@ -45,6 +50,10 @@ const primary =
   'rounded-xl bg-gold px-200 py-100 text-sm font-semibold text-ebony transition-all hover:bg-[#e6c34d] disabled:cursor-not-allowed disabled:opacity-50';
 const quiet =
   'rounded-lg border border-white/15 px-100 py-50 text-xs font-semibold text-ivory/70 transition-colors hover:border-crimson hover:text-crimson';
+/* Correcting is the ordinary act and removing is the grave one, so Edit reads
+   as the calmer of the two and only Delete turns red under the pointer. */
+const subtle =
+  'rounded-lg border border-white/15 px-100 py-50 text-xs font-semibold text-ivory/70 transition-colors hover:border-gold hover:text-gold';
 
 /**
  * What the home page will not have room for.
@@ -83,6 +92,12 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
   const [file, setFile] = useState<File | null>(null);
   const [contact, setContact] = useState(initial.contact);
 
+  /* Which record the panel above is currently correcting, if any. */
+  const [editingUpdate, setEditingUpdate] = useState<string | null>(null);
+  const [editingEvent, setEditingEvent] = useState<string | null>(null);
+  const updateForm = useRef<HTMLElement>(null);
+  const eventForm = useRef<HTMLElement>(null);
+
   useEffect(() => setContact(initial.contact), [initial.contact]);
 
   /* The public calendar shows only what is still ahead, soonest first, so a
@@ -107,9 +122,14 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
         setError(
           data.error === 'store_not_connected'
             ? 'The content store is not connected to this deployment yet.'
-            : data.error === 'title_and_date_required'
-              ? 'A title and a date are both needed.'
-              : 'That did not save. Try again.',
+            : /* The route says `title_and_valid_date_required`; this read
+                 `title_and_date_required` and so showed the generic line for
+                 the one failure the office can actually put right. */
+              data.error === 'title_and_valid_date_required'
+              ? 'A title and a valid date are both needed.'
+              : data.error === 'not_found'
+                ? 'That entry is no longer here. Someone may have removed it.'
+                : 'That did not save. Try again.',
         );
         return false;
       }
@@ -122,6 +142,65 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
     } finally {
       setBusy(false);
     }
+  }
+
+  /* The blank each form goes back to, whether a save finished or the office
+     changed its mind. */
+  const BLANK_UPDATE = { title: '', date: '', body: '' };
+  const BLANK_EVENT = { title: '', date: '', time: '', place: '', body: '' };
+
+  function resetForms() {
+    setEditingUpdate(null);
+    setEditingEvent(null);
+    setUpdate(BLANK_UPDATE);
+    setEvent(BLANK_EVENT);
+  }
+
+  /**
+   * Bring a record up into the panel that posts.
+   *
+   * The panel is above the list on a narrow screen and beside it on a wide
+   * one, so an Edit pressed halfway down a long list can load a form nobody
+   * can see. Scrolling to it is what makes the button mean something on a
+   * phone; the focus is what makes it mean something to a keyboard.
+   */
+  function scrollToForm(ref: React.RefObject<HTMLElement | null>) {
+    const el = ref.current;
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    el.querySelector('input')?.focus({ preventScroll: true });
+  }
+
+  /* A photograph taken off leaves the field undefined, and an undefined field
+     does not survive JSON.stringify — the key simply vanishes, and the route,
+     which patches only what it is sent, would keep the old picture. Empty
+     strings are what say "cleared" on the way out. */
+  async function saveUpdate() {
+    const ok = editingUpdate
+      ? await send(
+          {
+            action: 'set-update',
+            id: editingUpdate,
+            update: { ...update, image: update.image ?? '', alt: update.alt ?? '' },
+          },
+          'Update corrected.',
+        )
+      : await send({ action: 'add-update', update }, 'Update posted.');
+    if (ok) resetForms();
+  }
+
+  async function saveEvent() {
+    const ok = editingEvent
+      ? await send(
+          {
+            action: 'set-event',
+            id: editingEvent,
+            event: { ...event, imageUrl: event.imageUrl ?? '', imageAlt: event.imageAlt ?? '' },
+          },
+          'Event corrected.',
+        )
+      : await send({ action: 'add-event', event }, 'Event added.');
+    if (ok) resetForms();
   }
 
   async function upload() {
@@ -182,7 +261,9 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
           <button
             key={t.id}
             type="button"
-            onClick={() => { setTab(t.id); setNote(null); setError(null); }}
+            /* A correction left half-typed on a tab nobody is looking at is a
+               correction the office thinks it made. */
+            onClick={() => { setTab(t.id); setNote(null); setError(null); resetForms(); }}
             aria-pressed={tab === t.id}
             className={[
               'rounded-xl px-300 py-100 text-sm font-semibold transition-all',
@@ -206,11 +287,20 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
       {/* ---------------- updates ---------------- */}
       {tab === 'updates' && (
         <div className="mt-400 grid gap-400 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start">
-          <section className="rounded-2xl border border-white/10 bg-ebony-raised p-300">
-            <h2 className="font-display text-2xl font-600 text-ivory">Post an update</h2>
+          <section
+            ref={updateForm}
+            className={[
+              'rounded-2xl border bg-ebony-raised p-300 scroll-mt-300',
+              editingUpdate ? 'border-gold/40' : 'border-white/10',
+            ].join(' ')}
+          >
+            <h2 className="font-display text-2xl font-600 text-ivory">
+              {editingUpdate ? 'Correct the update' : 'Post an update'}
+            </h2>
             <p className="mt-100 text-sm leading-relaxed text-ivory/60">
-              Dated entries appear on the home page, newest first. This is what
-              turns the site into a record that accumulates.
+              {editingUpdate
+                ? 'The entry keeps its place in the record; only what you change here changes on the site.'
+                : 'Dated entries appear on the home page, newest first. This is what turns the site into a record that accumulates.'}
             </p>
             <div className="mt-300 grid gap-200">
               <div>
@@ -246,18 +336,25 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
                   onChange={(image, alt) => setUpdate((u) => ({ ...u, image, alt }))}
                 />
               </div>
-              <button
-                type="button"
-                className={primary}
-                disabled={busy || !update.title || !update.date}
-                onClick={async () => {
-                  if (await send({ action: 'add-update', update }, 'Update posted.')) {
-                    setUpdate({ title: '', date: '', body: '' });
-                  }
-                }}
-              >
-                {busy ? 'Saving…' : 'Post the update'}
-              </button>
+              <div className="flex flex-wrap items-center gap-200">
+                <button
+                  type="button"
+                  className={primary}
+                  disabled={busy || !update.title || !update.date}
+                  onClick={saveUpdate}
+                >
+                  {busy ? 'Saving…' : editingUpdate ? 'Save the correction' : 'Post the update'}
+                </button>
+                {editingUpdate && (
+                  <button
+                    type="button"
+                    className="text-sm font-semibold text-ivory/55 transition-colors hover:text-ivory"
+                    onClick={resetForms}
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
             </div>
           </section>
 
@@ -279,7 +376,11 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
                     key={u.id}
                     className={[
                       'rounded-2xl border bg-ebony-raised p-300',
-                      i < HOME_LIMITS.updates ? 'border-white/10' : 'border-dashed border-gold/30 opacity-70',
+                      editingUpdate === u.id
+                        ? 'border-gold/60'
+                        : i < HOME_LIMITS.updates
+                          ? 'border-white/10'
+                          : 'border-dashed border-gold/30 opacity-70',
                     ].join(' ')}
                   >
                     <div className="flex items-start justify-between gap-200">
@@ -296,14 +397,50 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
                         {u.body && <p className="mt-100 text-sm leading-relaxed text-ivory/65">{u.body}</p>}
                       </div>
                       </div>
-                      <button
-                        type="button"
-                        className={quiet}
-                        disabled={busy}
-                        onClick={() => send({ action: 'delete-update', id: u.id }, 'Update removed.')}
-                      >
-                        Delete
-                      </button>
+                      <div className="flex shrink-0 flex-col items-end gap-75">
+                        {editingUpdate === u.id ? (
+                          <span className="rounded-lg border border-gold/40 px-100 py-50 text-xs font-semibold text-gold">
+                            Being corrected
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            className={subtle}
+                            disabled={busy}
+                            onClick={() => {
+                              setEditingEvent(null);
+                              setEditingUpdate(u.id);
+                              setUpdate({
+                                title: u.title,
+                                date: u.date,
+                                body: u.body ?? '',
+                                image: u.image,
+                                alt: u.alt,
+                              });
+                              setNote(null);
+                              setError(null);
+                              scrollToForm(updateForm);
+                            }}
+                          >
+                            Edit
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className={quiet}
+                          disabled={busy}
+                          onClick={async () => {
+                            /* Removing the entry loaded into the panel above
+                               would leave it correcting a record that is no
+                               longer there, and the save would come back "no
+                               longer here" with the text still in it. */
+                            if (editingUpdate === u.id) resetForms();
+                            await send({ action: 'delete-update', id: u.id }, 'Update removed.');
+                          }}
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                   </li>
                 ))}
@@ -316,11 +453,20 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
       {/* ---------------- events ---------------- */}
       {tab === 'events' && (
         <div className="mt-400 grid gap-400 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start">
-          <section className="rounded-2xl border border-white/10 bg-ebony-raised p-300">
-            <h2 className="font-display text-2xl font-600 text-ivory">Add an event</h2>
+          <section
+            ref={eventForm}
+            className={[
+              'rounded-2xl border bg-ebony-raised p-300 scroll-mt-300',
+              editingEvent ? 'border-gold/40' : 'border-white/10',
+            ].join(' ')}
+          >
+            <h2 className="font-display text-2xl font-600 text-ivory">
+              {editingEvent ? 'Change the event' : 'Add an event'}
+            </h2>
             <p className="mt-100 text-sm leading-relaxed text-ivory/60">
-              Durbars, festivals, commissionings and appearances. They appear on
-              the site in date order and drop off once the day has passed.
+              {editingEvent
+                ? 'A date moved here moves the record itself, so anything answered with this event still points at it.'
+                : 'Durbars, festivals, commissionings and appearances. They appear on the site in date order and drop off once the day has passed.'}
             </p>
             <div className="mt-300 grid gap-200">
               <div>
@@ -368,18 +514,25 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
                   onChange={(imageUrl, imageAlt) => setEvent((ev) => ({ ...ev, imageUrl, imageAlt }))}
                 />
               </div>
-              <button
-                type="button"
-                className={primary}
-                disabled={busy || !event.title || !event.date}
-                onClick={async () => {
-                  if (await send({ action: 'add-event', event }, 'Event added.')) {
-                    setEvent({ title: '', date: '', time: '', place: '', body: '' });
-                  }
-                }}
-              >
-                {busy ? 'Saving…' : 'Add the event'}
-              </button>
+              <div className="flex flex-wrap items-center gap-200">
+                <button
+                  type="button"
+                  className={primary}
+                  disabled={busy || !event.title || !event.date}
+                  onClick={saveEvent}
+                >
+                  {busy ? 'Saving…' : editingEvent ? 'Save the change' : 'Add the event'}
+                </button>
+                {editingEvent && (
+                  <button
+                    type="button"
+                    className="text-sm font-semibold text-ivory/55 transition-colors hover:text-ivory"
+                    onClick={resetForms}
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
             </div>
           </section>
 
@@ -406,7 +559,11 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
                       key={ev.id}
                       className={[
                         'rounded-2xl border bg-ebony-raised p-300',
-                        beyond ? 'border-dashed border-gold/30 opacity-70' : 'border-white/10',
+                        editingEvent === ev.id
+                          ? 'border-gold/60'
+                          : beyond
+                            ? 'border-dashed border-gold/30 opacity-70'
+                            : 'border-white/10',
                       ].join(' ')}
                     >
                       <div className="flex items-start justify-between gap-200">
@@ -427,14 +584,48 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
                           </p>
                           {ev.body && <p className="mt-100 text-sm leading-relaxed text-ivory/65">{ev.body}</p>}
                         </div>
-                        <button
-                          type="button"
-                          className={quiet}
-                          disabled={busy}
-                          onClick={() => send({ action: 'delete-event', id: ev.id }, 'Event removed.')}
-                        >
-                          Delete
-                        </button>
+                        <div className="flex shrink-0 flex-col items-end gap-75">
+                          {editingEvent === ev.id ? (
+                            <span className="rounded-lg border border-gold/40 px-100 py-50 text-xs font-semibold text-gold">
+                              Being changed
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              className={subtle}
+                              disabled={busy}
+                              onClick={() => {
+                                setEditingUpdate(null);
+                                setEditingEvent(ev.id);
+                                setEvent({
+                                  title: ev.title,
+                                  date: ev.date,
+                                  time: ev.time ?? '',
+                                  place: ev.place ?? '',
+                                  body: ev.body ?? '',
+                                  imageUrl: ev.imageUrl,
+                                  imageAlt: ev.imageAlt,
+                                });
+                                setNote(null);
+                                setError(null);
+                                scrollToForm(eventForm);
+                              }}
+                            >
+                              Edit
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            className={quiet}
+                            disabled={busy}
+                            onClick={async () => {
+                              if (editingEvent === ev.id) resetForms();
+                              await send({ action: 'delete-event', id: ev.id }, 'Event removed.');
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
                     </li>
                   );

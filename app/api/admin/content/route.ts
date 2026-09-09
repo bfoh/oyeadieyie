@@ -13,9 +13,10 @@ import {
 /* Reading is for the admin screens; the public pages read the store directly. */
 type Action =
   | { action: 'add-update'; update: { title: string; date: string; body: string; image?: string; alt?: string } }
+  | { action: 'set-update'; id: string; update: { title?: string; date?: string; body?: string; image?: string; alt?: string } }
   | { action: 'delete-update'; id: string }
   | { action: 'add-event'; event: { title: string; date: string; time?: string; place?: string; body?: string; imageUrl?: string; imageAlt?: string } }
-  | { action: 'set-event'; id: string; event: { title?: string; date?: string; time?: string; place?: string; body?: string } }
+  | { action: 'set-event'; id: string; event: { title?: string; date?: string; time?: string; place?: string; body?: string; imageUrl?: string; imageAlt?: string } }
   | { action: 'delete-event'; id: string }
   | { action: 'delete-image'; id: string }
   | { action: 'set-enquiry'; id: string; status?: string; note?: string }
@@ -105,6 +106,43 @@ export async function POST(request: Request) {
       ];
       break;
     }
+    /* Editing a posted update, so a wrong date or a misspelt name is a
+       correction rather than a delete and a re-post. The two are not the same
+       thing: a re-post mints a new id, and anything that has cited the entry
+       — a share card, a link the press was given — is pointing at a record
+       that no longer exists. */
+    case 'set-update': {
+      const update = content.updates.find((u) => u.id === body.id);
+      if (!update) {
+        return NextResponse.json({ error: 'not_found' }, { status: 404 });
+      }
+      const f = body.update ?? {};
+      if (typeof f.title === 'string') {
+        const title = clean(f.title, 120);
+        if (!title) {
+          return NextResponse.json({ error: 'title_and_valid_date_required' }, { status: 400 });
+        }
+        update.title = title;
+      }
+      if (typeof f.date === 'string') {
+        const date = cleanDate(f.date);
+        if (!date) {
+          return NextResponse.json({ error: 'title_and_valid_date_required' }, { status: 400 });
+        }
+        update.date = date;
+      }
+      if (typeof f.body === 'string') update.body = clean(f.body, 2000);
+      /* A photograph swapped out, or taken off entirely, leaves the old file
+         behind. Reclaim it the same way a delete does — through the reference
+         count, since an event may be using the very same frame. */
+      if (typeof f.image === 'string') {
+        const was = update.image;
+        update.image = clean(f.image, 400) || undefined;
+        if (was && was !== update.image) await dropFileIfUnused(was);
+      }
+      if (typeof f.alt === 'string') update.alt = clean(f.alt, 200) || undefined;
+      break;
+    }
     case 'delete-update': {
       const going = content.updates.find((u) => u.id === body.id);
       content.updates = content.updates.filter((u) => u.id !== body.id);
@@ -161,6 +199,14 @@ export async function POST(request: Request) {
       if (typeof f.time === 'string') event.time = clean(f.time, 40) || undefined;
       if (typeof f.place === 'string') event.place = clean(f.place, 120) || undefined;
       if (typeof f.body === 'string') event.body = clean(f.body, 1200) || undefined;
+      /* As with an update: the file the engagement is letting go of is
+         reclaimed only once nothing else points at it. */
+      if (typeof f.imageUrl === 'string') {
+        const was = event.imageUrl;
+        event.imageUrl = clean(f.imageUrl, 400) || undefined;
+        if (was && was !== event.imageUrl) await dropFileIfUnused(was);
+      }
+      if (typeof f.imageAlt === 'string') event.imageAlt = clean(f.imageAlt, 200) || undefined;
       /* A moved date changes the order the public page prints. */
       content.events = [...content.events].sort((a, b) => a.date.localeCompare(b.date));
       break;
