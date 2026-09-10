@@ -20,10 +20,10 @@
  * rest.
  */
 import { parseISODate } from './content';
-import type { Update } from './content';
+import type { Statement, Update } from './content';
 import type { Enquiry, SiteContent, SiteEvent } from './store';
 
-export type EntryKind = 'event' | 'update' | 'request';
+export type EntryKind = 'event' | 'update' | 'statement' | 'request';
 
 export type CalendarEntry = {
   id: string;
@@ -47,6 +47,7 @@ export type CalendarEntry = {
 export const KIND_LABEL: Record<EntryKind, string> = {
   event: 'Engagement',
   update: 'Recorded',
+  statement: 'Stated',
   request: 'Requested',
 };
 
@@ -54,6 +55,7 @@ export const KIND_LABEL: Record<EntryKind, string> = {
 export const KIND_NOTE: Record<EntryKind, string> = {
   event: 'In the calendar and published on the public site.',
   update: 'Work already done and posted as a dated update.',
+  statement: 'Something said on the record on this day.',
   request: 'Someone has asked for this date. Nothing is promised.',
 };
 
@@ -87,6 +89,26 @@ function fromUpdate(u: Update): CalendarEntry {
   };
 }
 
+/**
+ * A statement, but only a dated one.
+ *
+ * The office's standing words carry no date on purpose, and an entry with no
+ * date is not a calendar entry. `entriesByDay` filters those out before this
+ * ever runs, so the assertion below is safe.
+ */
+function fromStatement(st: Statement): CalendarEntry {
+  return {
+    id: `statement-${st.id}`,
+    recordId: st.id,
+    kind: 'statement',
+    date: st.date!,
+    title: st.title,
+    detail: st.pullQuote ?? st.body,
+    place: st.occasion,
+    href: '/admin/content',
+  };
+}
+
 function fromEnquiry(e: Enquiry): CalendarEntry {
   return {
     id: `request-${e.id}`,
@@ -112,6 +134,7 @@ export function entriesByDay(content: SiteContent): Map<string, CalendarEntry[]>
   const all: CalendarEntry[] = [
     ...content.events.map(fromEvent),
     ...content.updates.map(fromUpdate),
+    ...content.statements.filter((st) => st.date).map(fromStatement),
     ...content.enquiries
       /* Declined and archived requests are answered; drawing them on the
          calendar would make a settled date look contested. */
@@ -131,7 +154,12 @@ export function entriesByDay(content: SiteContent): Map<string, CalendarEntry[]>
   }
   /* Engagements first, then the record, then the asks: what is committed
      should read before what is merely wanted. */
-  const rank: Record<EntryKind, number> = { event: 0, update: 1, request: 2 };
+  const rank: Record<EntryKind, number> = {
+    event: 0,
+    update: 1,
+    statement: 2,
+    request: 3,
+  };
   for (const day of map.values()) {
     day.sort((a, b) => rank[a.kind] - rank[b.kind] || a.title.localeCompare(b.title));
   }

@@ -50,6 +50,13 @@ const KIND_STYLE: Record<EntryKind, { chip: string; dot: string; card: string }>
     dot: 'bg-ivory/60',
     card: 'border-white/20',
   },
+  /* Said, not done. Quieter than an update, because a statement made on a day
+     does not occupy that day the way an engagement or a piece of work does. */
+  statement: {
+    chip: 'bg-transparent text-gold/80 border-gold/25',
+    dot: 'bg-gold/50',
+    card: 'border-gold/25',
+  },
   request: {
     /* Dashed, everywhere it appears: nothing here is promised. */
     chip: 'border-dashed bg-transparent text-ivory/60 border-ivory/35',
@@ -571,7 +578,12 @@ export function Calendar({
   /* Counted over the month on screen, not over the whole store, so the figure
      answers the question the person is actually looking at. */
   const monthCounts = useMemo(() => {
-    const out: Record<EntryKind, number> = { event: 0, update: 0, request: 0 };
+    const out: Record<EntryKind, number> = {
+      event: 0,
+      update: 0,
+      statement: 0,
+      request: 0,
+    };
     for (const cell of cells) {
       if (!cell.inMonth) continue;
       for (const e of byDay.get(cell.iso) ?? []) out[e.kind] += 1;

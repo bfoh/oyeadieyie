@@ -7,16 +7,28 @@ import {
   WhatsappLogo,
   Phone,
   EnvelopeSimple,
+  Plus,
 } from '@phosphor-icons/react/dist/ssr';
-import { ENGAGE_ROUTES, CONTACT } from '@/lib/content';
+import { ENGAGE_ROUTES, CONTACT, FAQ } from '@/lib/content';
 import { useContactValue, useWhatsappHref, useTelHref } from './ContactContext';
+import { Section, SectionHead } from './Section';
 import { Reveal } from './Reveal';
 
 type Errors = Partial<Record<'name' | 'email' | 'organisation' | 'detail', string>>;
 type Status = 'idle' | 'loading' | 'sent' | 'failed';
 
-export function Engage() {
+/**
+ * Contact.
+ *
+ * The form, the direct routes, the office's own details, and the questions
+ * worth answering before anyone writes — one chapter, because they are one
+ * task. The form used to be its own section called Engage; the anchor
+ * `#engage` is kept inside this one, because links to it have already been
+ * shared and a fragment cannot be redirected.
+ */
+export function Contact() {
   const [route, setRoute] = useState(ENGAGE_ROUTES[0].id);
+  const [openQuestion, setOpenQuestion] = useState<number | null>(0);
   const [errors, setErrors] = useState<Errors>({});
   const [status, setStatus] = useState<Status>('idle');
   /* Held so a failed send can hand the reader their own message back as a
@@ -117,27 +129,16 @@ export function Engage() {
     'w-full rounded-xl border bg-ebony px-200 py-100 text-base text-ivory placeholder:text-ivory/30 transition-all duration-700 ease-fluid';
 
   return (
-    <section
-      id="engage"
-      data-choreo className="relative border-t border-ebony-line bg-ebony-raised/45 px-300 py-700 sm:px-500 sm:py-800 lg:px-800"
-    >
+    <Section id="contact" ground="raised">
+      {/* The old anchor, kept alive. Links to /#engage were shared before
+          this became Contact, and a fragment cannot be redirected. */}
+      <span id="engage" className="block scroll-mt-[96px]" aria-hidden="true" />
 
-      <div className="relative mx-auto w-full max-w-[1280px]">
-        <Reveal>
-          <div className="flex items-center gap-100">
-            <span className="rule-gold w-[40px] shrink-0" aria-hidden="true" />
-            <p data-choreo-label className="text-xs font-semibold uppercase tracking-[0.18em] text-gold">
-              Engage and support
-            </p>
-          </div>
-          <h2 data-choreo-heading className="mt-100 max-w-measure font-display text-4xl font-600 leading-[1.1] text-ivory sm:mt-200 sm:text-5xl">
-            Write to the office
-          </h2>
-          <p data-choreo-lead className="mt-200 max-w-measure text-base leading-relaxed text-ivory/70">
-            Appearances are confirmed against the traditional calendar. Allow six
-            weeks for international engagements and three within Ghana.
-          </p>
-        </Reveal>
+      <SectionHead
+        id="contact"
+        variant="split"
+        lead="Appearances are confirmed against the traditional calendar. Allow six weeks for international engagements and three within Ghana."
+      />
 
         <div className="mt-600 grid gap-500 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start">
           {/* Routes */}
@@ -181,9 +182,7 @@ export function Engage() {
                 one. Rendered only where the office has supplied a number. */}
             {hasDirectRoute && (
               <div className="mt-300 rounded-2xl border border-ebony-line bg-ebony/60 p-300">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gold">
-                  Or reach the office directly
-                </p>
+                <p className="text-sm text-gold">Or reach the office directly</p>
                 <div className="mt-200 grid gap-100">
                   {whatsapp && (
                     <a
@@ -503,8 +502,61 @@ export function Engage() {
               )}
             </div>
           </Reveal>
-        </div>
       </div>
-    </section>
+
+      {/* Answered here so nobody has to ask. Protocol questions in particular
+          are the ones a newsroom is least likely to write in about and most
+          likely to get wrong in print. */}
+      <Reveal className="mt-800 border-t border-ebony-line pt-600">
+        <h3 className="max-w-measure font-display text-3xl font-600 leading-tight text-ivory">
+          Before you write to the office
+        </h3>
+      </Reveal>
+
+      <ul data-reveal-group className="mt-400 max-w-[900px]">
+        {FAQ.map((item, i) => {
+          const isOpen = openQuestion === i;
+          return (
+            <Reveal as="li" item key={item.q} delay={i * 40}>
+              <h4>
+                <button
+                  type="button"
+                  onClick={() => setOpenQuestion(isOpen ? null : i)}
+                  aria-expanded={isOpen}
+                  aria-controls={`faq-panel-${i}`}
+                  className="flex w-full items-start justify-between gap-200 border-b border-ebony-line py-300 text-left transition-colors duration-700 ease-fluid hover:text-gold active:scale-[0.995]"
+                >
+                  <span className="font-display text-xl font-600 leading-snug text-ivory sm:text-2xl">
+                    {item.q}
+                  </span>
+                  <Plus
+                    size={20}
+                    weight="light"
+                    aria-hidden="true"
+                    className={[
+                      'mt-[4px] shrink-0 text-gold transition-transform duration-700 ease-fluid',
+                      isOpen ? 'rotate-45' : 'rotate-0',
+                    ].join(' ')}
+                  />
+                </button>
+              </h4>
+              <div
+                id={`faq-panel-${i}`}
+                className={[
+                  'grid overflow-hidden transition-all duration-700 ease-fluid',
+                  isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
+                ].join(' ')}
+              >
+                <div className="min-h-0">
+                  <p className="max-w-measure py-300 text-base leading-relaxed text-ivory/65">
+                    {item.a}
+                  </p>
+                </div>
+              </div>
+            </Reveal>
+          );
+        })}
+      </ul>
+    </Section>
   );
 }

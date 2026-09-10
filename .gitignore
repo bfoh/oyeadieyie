@@ -16,3 +16,7 @@ videos/
 # TypeScript incremental build cache
 tsconfig.tsbuildinfo
 .env*.local
+.env*
+
+# Playwright MCP scratch output from browser checks
+.playwright-mcp/

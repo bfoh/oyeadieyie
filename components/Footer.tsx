@@ -25,6 +25,22 @@ export function Footer() {
             <p className="mt-75 text-sm text-gold">
               {CHIEF.title}, the {CHIEF.titleMeaning}
             </p>
+            <ul className="mt-100 flex flex-wrap items-center gap-y-25">
+              {CHIEF.strapline.map((word, i) => (
+                <li
+                  key={word}
+                  className="flex items-center text-sm italic text-ivory/60"
+                >
+                  {i > 0 && (
+                    <span
+                      aria-hidden="true"
+                      className="mx-200 h-[3px] w-[3px] shrink-0 rounded-full bg-gold"
+                    />
+                  )}
+                  {word}
+                </li>
+              ))}
+            </ul>
             <p className="mt-200 font-display text-lg not-italic text-ivory/80">
               {CHIEF.motto}
             </p>

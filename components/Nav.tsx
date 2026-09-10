@@ -1,9 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { usePathname } from 'next/navigation';
 import { NAV_LINKS, CHIEF, sectionHref } from '@/lib/content';
-import { useLens } from './LensContext';
 import { Crest } from './Crest';
 
 export function Nav() {
@@ -16,11 +14,6 @@ export function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
-  const { lens, setLens } = useLens();
-  const pathname = usePathname();
-  /* Nothing on a sub page responds to the lens, so showing the control there
-     would be a button that genuinely does nothing. */
-  const showLens = pathname === '/';
 
   /**
    * Has the page moved off the top?
@@ -203,10 +196,9 @@ export function Nav() {
                   the action and the menu, so the wordmark steps down to the
                   correct later reference form. Both are his name, neither is
                   an abbreviation invented for layout. */}
-              {/* Set in inscriptional capitals. Cinzel is drawn for caps, so
-                  the name reads as a cut inscription rather than as shouting,
-                  and the tracking is opened slightly because capitals set
-                  tight close up on one another. */}
+              {/* Set in inscriptional capitals. The tracking is opened
+                  because capitals set tight close up on one another and read
+                  as a shout; opened, they read as an inscription. */}
               <span
                 aria-hidden="true"
                 /* nowrap: a wordmark that breaks across two lines stops
@@ -214,18 +206,24 @@ export function Nav() {
                    smaller size so it stays on one line inside the pill. */
                 className="whitespace-nowrap font-wordmark text-[12px] font-600 uppercase leading-none tracking-[0.16em] text-ivory sm:text-[13.5px] sm:tracking-[0.18em] lg:text-[15px] lg:tracking-[0.15em]"
               >
-                {/* The full name only once there is genuinely room for it.
-                    Between the lg breakpoint and about 1250px the links, the
-                    lens control and the action leave the wordmark too little
-                    space, and it wrapped onto two lines. */}
-                <span className="xl:hidden">Nana Oyeadieyie</span>
-                <span className="hidden xl:inline">{CHIEF.fullName}</span>
+                {/* The full name only where there is genuinely room. With
+                    nine links in the bar there is not, until the widest step,
+                    so the mark uses the correct later-reference form of his
+                    name rather than an abbreviation invented for layout. */}
+                <span className="2xl:hidden">Nana Oyeadieyie</span>
+                <span className="hidden 2xl:inline">{CHIEF.fullName}</span>
               </span>
             </a>
 
-            <span className="hidden h-[18px] w-px bg-white/15 lg:block" aria-hidden="true" />
+            <span className="hidden h-[18px] w-px bg-white/15 xl:block" aria-hidden="true" />
 
-            <ul className="hidden items-center gap-25 lg:flex">
+            {/* Nine links, so they appear only where nine genuinely fit.
+                Below xl the pill keeps the wordmark, the action and the
+                hamburger, and the nine live in the overlay — which numbers
+                them and has room to set them properly. Shrinking the type to
+                squeeze nine into a narrower bar was the alternative and it is
+                worse: an unreadable nav is not a nav. */}
+            <ul className="hidden items-center gap-25 xl:flex">
               {NAV_LINKS.map((link) => {
                 const isActive = active === link.id;
                 return (
@@ -247,41 +245,9 @@ export function Nav() {
               })}
             </ul>
 
-            {/* Lens toggle */}
-            <div
-              role="group"
-              aria-label="Viewing lens"
-              className={[
-                'items-center rounded-full border border-white/10 bg-white/[0.04] p-25',
-                showLens ? 'hidden md:flex' : 'hidden',
-              ].join(' ')}
-            >
-              {(
-                [
-                  { key: 'regal', label: 'Regal' },
-                  { key: 'modern', label: 'Modern' },
-                ] as const
-              ).map((opt) => (
-                <button
-                  key={opt.key}
-                  type="button"
-                  onClick={() => setLens(opt.key)}
-                  aria-pressed={lens === opt.key}
-                  className={[
-                    'rounded-full px-100 py-50 text-xs font-semibold transition-all duration-700 ease-fluid active:scale-[0.98]',
-                    lens === opt.key
-                      ? 'bg-gold text-ebony'
-                      : 'text-ivory/60 hover:text-ivory',
-                  ].join(' ')}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-
             {/* Full label from sm up */}
             <a
-              href="/#engage"
+              href="/#contact"
               className="hidden min-h-[44px] items-center rounded-full bg-gold px-100 py-75 text-sm font-semibold text-ebony transition-all duration-700 ease-fluid hover:bg-[#e6c34d] active:scale-[0.98] sm:inline-flex"
             >
               Request an appearance
@@ -289,7 +255,7 @@ export function Nav() {
             {/* Compact on a phone, so the primary action is never buried
                 inside the menu overlay */}
             <a
-              href="/#engage"
+              href="/#contact"
               className="inline-flex min-h-[44px] items-center rounded-full bg-gold px-100 py-50 text-sm font-semibold text-ebony transition-all duration-700 ease-fluid active:scale-[0.98] sm:hidden"
             >
               Request
@@ -304,7 +270,7 @@ export function Nav() {
               aria-controls="nav-overlay"
               aria-label={open ? 'Close menu' : 'Open menu'}
               className={[
-                'relative h-[44px] w-[44px] shrink-0 rounded-full border transition-all duration-700 ease-fluid hover:bg-white/10 active:scale-[0.96] lg:hidden',
+                'relative h-[44px] w-[44px] shrink-0 rounded-full border transition-all duration-700 ease-fluid hover:bg-white/10 active:scale-[0.96] xl:hidden',
                 scrolled && !open
                   ? 'border-white/15 bg-ebony/70 backdrop-blur-md sm:border-white/10 sm:bg-white/[0.04] sm:backdrop-blur-none'
                   : 'border-white/10 bg-white/[0.04]',
@@ -344,7 +310,14 @@ export function Nav() {
           open ? 'opacity-100' : 'pointer-events-none opacity-0',
         ].join(' ')}
       >
-        <div className="flex h-full flex-col justify-center px-300 pb-[env(safe-area-inset-bottom)] sm:px-400">
+        {/* Scrolls when it must, centres when it can.
+            Six links fitted a centred column on a phone; nine do not, and a
+            centred list that overflows loses its FIRST item behind the nav
+            pill — where nobody thinks to look for it. The outer element owns
+            the scrolling and the clearance for the pill; the inner one keeps
+            the centring for the cases where it still fits. */}
+        <div className="h-full overflow-y-auto px-300 pb-500 pt-[96px] sm:px-400">
+          <div className="flex min-h-full flex-col justify-center pb-[env(safe-area-inset-bottom)]">
           <ul className="mx-auto w-full max-w-measure">
             {NAV_LINKS.map((link, i) => (
               <li key={link.id} className="overflow-hidden">
@@ -353,7 +326,7 @@ export function Nav() {
                   onClick={() => setOpen(false)}
                   style={{ transitionDelay: `${open ? 80 + i * 50 : 0}ms` }}
                   className={[
-                    'flex items-baseline justify-between gap-200 border-b border-white/10 py-200 font-display text-4xl text-ivory transition-all duration-700 ease-fluid hover:text-gold active:text-gold sm:py-300',
+                    'flex items-baseline justify-between gap-200 border-b border-white/10 py-100 font-display text-3xl text-ivory transition-all duration-700 ease-fluid hover:text-gold active:text-gold sm:py-300 sm:text-4xl',
                     open
                       ? 'translate-y-0 opacity-100'
                       : 'translate-y-12 opacity-0',
@@ -364,7 +337,7 @@ export function Nav() {
                     aria-hidden="true"
                     className="font-sans text-xs tracking-[0.2em] text-gold/70"
                   >
-                    {String(i + 1).padStart(2, '0')}
+                    {link.numeral}
                   </span>
                 </a>
               </li>
@@ -374,52 +347,18 @@ export function Nav() {
           <div
             style={{ transitionDelay: `${open ? 80 + NAV_LINKS.length * 50 : 0}ms` }}
             className={[
-              'mx-auto mt-500 w-full max-w-measure transition-all duration-700 ease-fluid',
+              'mx-auto mt-400 w-full max-w-measure transition-all duration-700 ease-fluid',
               open ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0',
             ].join(' ')}
           >
-            {/* The lens toggle belongs on every screen size, not desktop alone */}
-            <div className={showLens ? 'md:hidden' : 'hidden'}>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ivory/50">
-                Viewing lens
-              </p>
-              <div
-                role="group"
-                aria-label="Viewing lens"
-                className="mt-100 grid grid-cols-2 gap-50 rounded-2xl border border-white/10 bg-white/[0.04] p-50"
-              >
-                {(
-                  [
-                    { key: 'regal', label: 'Regal tradition' },
-                    { key: 'modern', label: 'Modern vision' },
-                  ] as const
-                ).map((opt) => (
-                  <button
-                    key={opt.key}
-                    type="button"
-                    onClick={() => setLens(opt.key)}
-                    aria-pressed={lens === opt.key}
-                    /* nested radius: outer 16px minus the 4px gap = 12px */
-                    className={[
-                      'rounded-xl px-100 py-75 text-sm font-semibold transition-all duration-700 ease-fluid active:scale-[0.98]',
-                      lens === opt.key
-                        ? 'bg-gold text-ebony'
-                        : 'text-ivory/60 hover:text-ivory',
-                    ].join(' ')}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             <a
-              href="/#engage"
+              href="/#contact"
               onClick={() => setOpen(false)}
               className="mt-300 block rounded-xl bg-gold px-200 py-100 text-center text-base font-semibold text-ebony transition-all duration-700 ease-fluid hover:bg-[#e6c34d] active:scale-[0.98] md:mt-0"
             >
               Request an appearance
             </a>
+          </div>
           </div>
         </div>
       </div>

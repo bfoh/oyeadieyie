@@ -18,7 +18,6 @@ import {
   PHOTO_SETS,
   KIT_TERMS,
 } from '@/lib/presskit';
-import { LensProvider } from '@/components/LensContext';
 import { Nav } from '@/components/Nav';
 import { MotionProvider } from '@/components/motion/MotionProvider';
 import { AdinkraCloth } from '@/components/AdinkraCloth';
@@ -46,7 +45,7 @@ export default async function MediaKit() {
   const press = isSupplied(contact.press) ? contact.press : null;
 
   return (
-    <LensProvider>
+    <>
       <MotionProvider />
       <AdinkraCloth />
       <Nav />
@@ -444,6 +443,6 @@ export default async function MediaKit() {
       </main>
 
       <Footer />
-    </LensProvider>
+    </>
   );
 }

@@ -12,7 +12,8 @@ export const KIT = {
 export const ADDRESS = [
   {
     label: 'First reference',
-    value: 'Nana Oyeadieyie Barima Essoun I, Nkosuo Hene of Adrobaa',
+    value:
+      'Nana Oyeadieyie Barima Essoun I, Nkosuo Hene of Adrobaa Traditional Authority',
   },
   { label: 'Later references', value: 'Nana Oyeadieyie' },
   { label: 'In direct address', value: 'Nana' },

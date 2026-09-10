@@ -22,10 +22,11 @@ import { HOME_LIMITS } from '@/lib/limits';
  * assistant on whichever copy was written second.
  */
 
-type Tab = 'updates' | 'events' | 'gallery' | 'contact';
+type Tab = 'updates' | 'statements' | 'events' | 'gallery' | 'contact';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'updates', label: 'Updates' },
+  { id: 'statements', label: 'Statements' },
   { id: 'events', label: 'Events' },
   { id: 'gallery', label: 'Photographs' },
   { id: 'contact', label: 'Contact details' },
@@ -88,6 +89,17 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
   const [event, setEvent] = useState<{ title: string; date: string; time: string; place: string; body: string; imageUrl?: string; imageAlt?: string }>(
     { title: '', date: '', time: '', place: '', body: '' },
   );
+  /* A statement's date is optional here as it is everywhere else: his
+     standing words were not said on a day anyone recorded. */
+  const [statement, setStatement] = useState<{
+    title: string;
+    date: string;
+    occasion: string;
+    body: string;
+    pullQuote: string;
+    imageUrl?: string;
+    imageAlt?: string;
+  }>({ title: '', date: '', occasion: '', body: '', pullQuote: '' });
   const [alt, setAlt] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [contact, setContact] = useState(initial.contact);
@@ -95,8 +107,10 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
   /* Which record the panel above is currently correcting, if any. */
   const [editingUpdate, setEditingUpdate] = useState<string | null>(null);
   const [editingEvent, setEditingEvent] = useState<string | null>(null);
+  const [editingStatement, setEditingStatement] = useState<string | null>(null);
   const updateForm = useRef<HTMLElement>(null);
   const eventForm = useRef<HTMLElement>(null);
+  const statementForm = useRef<HTMLElement>(null);
 
   useEffect(() => setContact(initial.contact), [initial.contact]);
 
@@ -148,12 +162,21 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
      changed its mind. */
   const BLANK_UPDATE = { title: '', date: '', body: '' };
   const BLANK_EVENT = { title: '', date: '', time: '', place: '', body: '' };
+  const BLANK_STATEMENT = {
+    title: '',
+    date: '',
+    occasion: '',
+    body: '',
+    pullQuote: '',
+  };
 
   function resetForms() {
     setEditingUpdate(null);
     setEditingEvent(null);
+    setEditingStatement(null);
     setUpdate(BLANK_UPDATE);
     setEvent(BLANK_EVENT);
+    setStatement(BLANK_STATEMENT);
   }
 
   /**
@@ -200,6 +223,24 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
           'Event corrected.',
         )
       : await send({ action: 'add-event', event }, 'Event added.');
+    if (ok) resetForms();
+  }
+
+  async function saveStatement() {
+    const ok = editingStatement
+      ? await send(
+          {
+            action: 'set-statement',
+            id: editingStatement,
+            statement: {
+              ...statement,
+              imageUrl: statement.imageUrl ?? '',
+              imageAlt: statement.imageAlt ?? '',
+            },
+          },
+          'Statement corrected.',
+        )
+      : await send({ action: 'add-statement', statement }, 'Statement posted.');
     if (ok) resetForms();
   }
 
@@ -444,6 +485,211 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
                     </div>
                   </li>
                 ))}
+              </ul>
+            )}
+          </section>
+        </div>
+      )}
+
+
+      {/* ---------------- statements ---------------- */}
+      {tab === 'statements' && (
+        <div className="mt-400 grid gap-400 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start">
+          <section
+            ref={statementForm}
+            className={[
+              'rounded-2xl border bg-ebony-raised p-300 scroll-mt-300',
+              editingStatement ? 'border-gold/40' : 'border-white/10',
+            ].join(' ')}
+          >
+            <h2 className="font-display text-2xl font-600 text-ivory">
+              {editingStatement ? 'Correct the statement' : 'Post a statement'}
+            </h2>
+            <p className="mt-100 text-sm leading-relaxed text-ivory/60">
+              {editingStatement
+                ? 'The entry keeps its place in the record; only what you change here changes on the site.'
+                : 'What the chief has said, on the record. Post his words, not a summary of them.'}
+            </p>
+            <div className="mt-300 grid gap-200">
+              <div>
+                <label className={label} htmlFor="s-title">Title</label>
+                <input id="s-title" className={`${input} mt-75`} value={statement.title} maxLength={160}
+                  onChange={(e) => setStatement({ ...statement, title: e.target.value })}
+                  placeholder="Address to the traditional council" />
+              </div>
+              <div>
+                <label className={label} htmlFor="s-occasion">Occasion</label>
+                <input id="s-occasion" className={`${input} mt-75`} value={statement.occasion} maxLength={160}
+                  onChange={(e) => setStatement({ ...statement, occasion: e.target.value })}
+                  placeholder="Enstoolment durbar, Adrobaa" />
+              </div>
+              <div>
+                <label className={label} htmlFor="s-date">Date</label>
+                <input id="s-date" type="date" className={`${input} mt-75`} value={statement.date}
+                  onChange={(e) => setStatement({ ...statement, date: e.target.value })} />
+                {/* The one dated record on this site that may be left blank,
+                    and the reason is worth keeping: a standing line of his was
+                    not said on a day anybody wrote down, and putting a date on
+                    it would be inventing one. */}
+                <p className="mt-75 text-xs leading-relaxed text-ivory/50">
+                  Leave this empty for standing words rather than a speech given
+                  on a day. Undated statements print last and stay off the
+                  calendar.
+                </p>
+              </div>
+              <div>
+                <label className={label} htmlFor="s-quote">The line to set large</label>
+                <input id="s-quote" className={`${input} mt-75`} value={statement.pullQuote} maxLength={300}
+                  onChange={(e) => setStatement({ ...statement, pullQuote: e.target.value })}
+                  placeholder="Development for the People, By the People." />
+              </div>
+              <div>
+                <label className={label} htmlFor="s-body">What was said</label>
+                <textarea id="s-body" rows={6} className={`${input} mt-75 resize-y`} value={statement.body} maxLength={4000}
+                  onChange={(e) => setStatement({ ...statement, body: e.target.value })}
+                  placeholder="The passage, or the whole of it." />
+                <WritingAssistant
+                  kind="update"
+                  context={[
+                    statement.title && `Title: ${statement.title}`,
+                    statement.occasion && `Occasion: ${statement.occasion}`,
+                    statement.date && `Date: ${statement.date}`,
+                  ]
+                    .filter(Boolean)
+                    .join('\n')}
+                  placeholder="what he said at the durbar about youth training and the boreholes"
+                  onDraft={(text) => setStatement((st) => ({ ...st, body: text }))}
+                />
+              </div>
+              <div>
+                <label className={label}>Photograph</label>
+                <AttachPhoto
+                  value={statement.imageUrl}
+                  alt={statement.imageAlt}
+                  onChange={(imageUrl, imageAlt) =>
+                    setStatement((st) => ({ ...st, imageUrl, imageAlt }))
+                  }
+                />
+              </div>
+              <div className="flex flex-wrap items-center gap-200">
+                <button
+                  type="button"
+                  className={primary}
+                  disabled={busy || !statement.title || !statement.body}
+                  onClick={saveStatement}
+                >
+                  {busy ? 'Saving…' : editingStatement ? 'Save the correction' : 'Post the statement'}
+                </button>
+                {editingStatement && (
+                  <button
+                    type="button"
+                    className="text-sm font-semibold text-ivory/55 transition-colors hover:text-ivory"
+                    onClick={resetForms}
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <h2 className="font-display text-2xl font-600 text-ivory">
+              Published <span className="text-ivory/40">({content.statements.length})</span>
+            </h2>
+            <Overflow shown={HOME_LIMITS.statements} total={content.statements.length} what="statements" />
+            {content.statements.length === 0 ? (
+              <p className="mt-200 text-sm text-ivory/55">
+                Nothing posted. The section still carries his vision statement,
+                which is compiled into the site rather than stored here.
+              </p>
+            ) : (
+              <ul className="mt-200 grid gap-200">
+                {[...content.statements]
+                  .sort((a, b) => {
+                    if (!a.date && !b.date) return 0;
+                    if (!a.date) return 1;
+                    if (!b.date) return -1;
+                    return b.date.localeCompare(a.date);
+                  })
+                  .map((st, i) => (
+                    <li
+                      key={st.id}
+                      className={[
+                        'rounded-2xl border bg-ebony-raised p-300',
+                        editingStatement === st.id
+                          ? 'border-gold/60'
+                          : i < HOME_LIMITS.statements
+                            ? 'border-white/10'
+                            : 'border-dashed border-gold/30 opacity-70',
+                      ].join(' ')}
+                    >
+                      <div className="flex items-start justify-between gap-200">
+                        <div className="flex gap-200">
+                          {st.imageUrl && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={st.imageUrl} alt={st.imageAlt ?? ''} className="h-[70px] w-[70px] shrink-0 rounded-lg object-cover" />
+                          )}
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gold">
+                              {st.occasion}
+                              {st.occasion && st.date ? ' · ' : ''}
+                              {st.date ? formatDate(st.date) : ''}
+                            </p>
+                            <h3 className="mt-75 font-display text-xl font-600 text-ivory">{st.title}</h3>
+                            {st.pullQuote && (
+                              <p className="mt-100 font-display text-lg text-ivory/80">{st.pullQuote}</p>
+                            )}
+                            <p className="mt-100 text-sm leading-relaxed text-ivory/65">{st.body}</p>
+                          </div>
+                        </div>
+                        <div className="flex shrink-0 flex-col items-end gap-75">
+                          {editingStatement === st.id ? (
+                            <span className="rounded-lg border border-gold/40 px-100 py-50 text-xs font-semibold text-gold">
+                              Being corrected
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              className={subtle}
+                              disabled={busy}
+                              onClick={() => {
+                                setEditingUpdate(null);
+                                setEditingEvent(null);
+                                setEditingStatement(st.id);
+                                setStatement({
+                                  title: st.title,
+                                  date: st.date ?? '',
+                                  occasion: st.occasion ?? '',
+                                  body: st.body,
+                                  pullQuote: st.pullQuote ?? '',
+                                  imageUrl: st.imageUrl,
+                                  imageAlt: st.imageAlt,
+                                });
+                                setNote(null);
+                                setError(null);
+                                scrollToForm(statementForm);
+                              }}
+                            >
+                              Edit
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            className={quiet}
+                            disabled={busy}
+                            onClick={() => {
+                              if (!confirm(`Delete "${st.title}"? This cannot be undone.`)) return;
+                              void send({ action: 'delete-statement', id: st.id }, 'Statement deleted.');
+                              if (editingStatement === st.id) resetForms();
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
               </ul>
             )}
           </section>

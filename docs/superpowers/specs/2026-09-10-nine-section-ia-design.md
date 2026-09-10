@@ -1,7 +1,8 @@
 # Nine-section public information architecture
 
 **Date:** 2026-09-10
-**Status:** Approved for planning
+**Status:** Implemented. Departures from the design as agreed are marked
+**Changed during implementation** in the section they belong to.
 **Scope:** The public site only. The admin gains one panel because a new
 section needs somewhere to be edited; nothing else about the admin changes.
 
@@ -37,10 +38,10 @@ Sections:
 1. **One scroll, nine anchors.** No new routes. The single-page architecture,
    the motion system and the media pipeline are all built around it, and the
    brief describes sections rather than pages.
-2. **Speeches & Statements is admin-managed, seeded with two verbatim lines.**
+2. **Speeches & Statements is admin-managed, seeded with verbatim lines.**
    New record type in the Blob store, edited at `/admin/content`. Seeded from
-   the two things the chief has actually said that are already in the
-   repository: his motto and his vision statement.
+   what the chief has actually said and is already in the repository. (Two
+   entries were agreed; one shipped — see Section 4.)
 3. **DeoMetals moves inside About Nana; the lens is removed.** Nine named
    sections give the reader the whole record by name. A control that reorders
    what is already named is chrome.
@@ -86,10 +87,14 @@ One section, both faces, no tabs and no lens:
   paragraphs. This is the biography already approved for press use, so no new
   prose is written and the page and the press kit cannot disagree.
 - Two fact panels, side by side on `lg`, stacked below:
-  - **The stool** — `PROFILES.regal.facts` (title, stool, council, duties).
-  - **The business** — `PROFILES.modern.facts` (company, licence, operations,
+  - **The stool** — `PROFILES.stool.facts` (title, stool, council, duties).
+  - **The business** — `PROFILES.business.facts` (company, licence, operations,
     trade), with `/img/exec-standing.jpg`.
-- `PROFILES.regal.lead` and `PROFILES.modern.lead` carry each panel.
+- `PROFILES.stool.lead` and `PROFILES.business.lead` carry each panel.
+
+**Changed during implementation:** the `PROFILES` keys were `regal` and
+`modern`, which are the lens's words. With the lens gone they are `stool` and
+`business`, which are the site's.
 
 `PROFILES` keeps its shape; only `tab` becomes unused and is removed along
 with the lens.
@@ -161,6 +166,11 @@ New `components/Culture.tsx`, merging `Adinkra.tsx` and `FilmFeature.tsx`.
   `kingdom-festival.jpg`, `kingdom-queenmothers.jpg`, `procession-kente.jpg`,
   `kingdom-durbar.jpg`. Alt text copied from `GALLERY` / `PHOTO_SETS` where
   the same file already carries it, so one file never has two descriptions.
+
+**Changed during implementation:** the alt text is not copied, it is **looked
+up** at module scope from `TIMELINE` and `GALLERY`, and a file with no
+description on record is dropped from the band rather than given one. Copying
+by hand is how the two descriptions drift apart later; a lookup cannot.
 
 `Adinkra.tsx` and `FilmFeature.tsx` are deleted; `adinkraGlyphs.tsx` and
 `AdinkraCloth.tsx` are untouched.
@@ -356,9 +366,9 @@ the next reader does not reinvent it.
 ```ts
 export type Statement = {
   id: string;
-  /* Optional. A statement the office posts has a date; the two seeded lines
-     do not, because inventing a date for the chief's motto is exactly what
-     this project refuses to do. Undated entries sort last. */
+  /* Optional. A statement the office posts has a date; the seeded line does
+     not, because inventing a date for the chief's motto is exactly what this
+     project refuses to do. Undated entries sort last. */
   date?: string;
   title: string;
   /* 'Enstoolment durbar, Adrobaa'. Optional. */
@@ -373,13 +383,17 @@ export type Statement = {
 
 ### Seed
 
-`STATEMENTS` in `lib/content.ts`, two entries, both verbatim and both already
-in the repository:
+`STATEMENTS` in `lib/content.ts`.
 
-1. **The motto** — `CHIEF.motto`, as the pull-quote, occasion "In his own
-   words", no date.
-2. **The vision** — `TAGLINE`, as the body, occasion "In his own words", no
-   date.
+**Changed during implementation: one seeded entry, not two.** The motto, as
+the pull-quote, occasion "In his own words", no date.
+
+`TAGLINE` was to be seeded as a second card. On screen it printed the
+identical sentence twice — once at sixty pixels as the section's lead and
+again at sixteen in a card below it. That is a stutter, not a record, so the
+second seed was dropped. The lead still carries `TAGLINE`; the motto card
+survives because it says something the lead does not, which is what the line
+means.
 
 `baseContent()` returns `STATEMENTS` for `statements`, exactly as it already
 does for `UPDATES`, `PROJECTS` and `IMPACT`. `readContent()` merges with

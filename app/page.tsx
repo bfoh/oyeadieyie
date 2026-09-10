@@ -1,21 +1,17 @@
-import { LensProvider } from '@/components/LensContext';
 import { MotionProvider } from '@/components/motion/MotionProvider';
 import { AdinkraCloth } from '@/components/AdinkraCloth';
 import { Nav } from '@/components/Nav';
 import { Hero } from '@/components/Hero';
-import { DualProfile } from '@/components/DualProfile';
-import { TaglineReveal } from '@/components/TaglineReveal';
-import { Kingdom } from '@/components/Kingdom';
-import { Vision } from '@/components/Vision';
-import { Projects } from '@/components/Projects';
-import { Adinkra } from '@/components/Adinkra';
-import { FilmFeature } from '@/components/FilmFeature';
-import { Media } from '@/components/Media';
-import { Updates } from '@/components/Updates';
-import { Faq } from '@/components/Faq';
-import { Engage } from '@/components/Engage';
-import { Footer } from '@/components/Footer';
+import { About } from '@/components/About';
+import { Chieftaincy } from '@/components/Chieftaincy';
+import { Speeches } from '@/components/Speeches';
+import { Development } from '@/components/Development';
 import { Events } from '@/components/Events';
+import { Culture } from '@/components/Culture';
+import { News } from '@/components/News';
+import { Gallery } from '@/components/Gallery';
+import { Contact } from '@/components/Contact';
+import { Footer } from '@/components/Footer';
 import { FAQ, CHIEF, COMPANY } from '@/lib/content';
 import { SITE } from '@/lib/site';
 import { readContent } from '@/lib/store';
@@ -53,6 +49,16 @@ function StructuredData() {
         url: SITE,
         image: `${SITE}/img/chief-portrait.jpg`,
         jobTitle: `${CHIEF.title}, ${CHIEF.titleMeaning}`,
+        affiliation: {
+          '@type': 'Organization',
+          name: CHIEF.authority,
+          address: {
+            '@type': 'PostalAddress',
+            addressLocality: CHIEF.place,
+            addressRegion: CHIEF.region,
+            addressCountry: 'GH',
+          },
+        },
         description: `${CHIEF.titleMeaning} of ${CHIEF.place}, and a licensed precious metals dealer.`,
         knowsAbout: [
           'Akan traditional leadership',
@@ -115,30 +121,28 @@ export default async function Home() {
   const content = await readContent();
 
   return (
-    <LensProvider>
-      <ContactProvider value={content.contact}>
+    <ContactProvider value={content.contact}>
       <StructuredData />
       <MotionProvider />
       {/* The cloth the whole page is printed on */}
       <AdinkraCloth />
       <Nav />
+      {/* Nine chapters, in the order the office set out. The ids here are
+          the nav's ids and the anchors readers share; NAV_LINKS is the one
+          list that names them, so the two cannot drift apart. */}
       <main id="main" className="relative z-10">
         <Hero />
-        <DualProfile />
-        <TaglineReveal />
-        <Kingdom gallery={content.gallery} />
-        <Vision />
-        <Projects projects={content.projects} impact={content.impact} />
-        <Adinkra />
-        <FilmFeature />
-        <Media />
+        <About />
+        <Chieftaincy />
+        <Speeches statements={content.statements} />
+        <Development projects={content.projects} impact={content.impact} />
         <Events events={content.events} />
-        <Updates updates={content.updates} />
-        <Faq />
-        <Engage />
+        <Culture />
+        <News updates={content.updates} />
+        <Gallery images={content.gallery} />
+        <Contact />
       </main>
-        <Footer />
-      </ContactProvider>
-    </LensProvider>
+      <Footer />
+    </ContactProvider>
   );
 }

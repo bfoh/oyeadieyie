@@ -57,6 +57,13 @@ export default async function AdminDashboard() {
       note: content.updates.length ? 'Published' : 'None yet',
     },
     {
+      label: 'Statements on record',
+      value: content.statements.length,
+      note: content.statements.filter((st) => st.date).length
+        ? `${content.statements.filter((st) => st.date).length} dated`
+        : 'Standing words only',
+    },
+    {
       label: 'Events ahead',
       value: upcoming,
       note: content.events.length ? `${content.events.length} in the calendar` : 'None yet',
@@ -69,7 +76,7 @@ export default async function AdminDashboard() {
     { label: 'Brand assets', value: BRAND_ASSETS.length, note: 'Ready to issue' },
     { label: 'Cleared photographs', value: photos, note: 'In the press kit' },
     { label: 'Adinkra published', value: ADINKRA.length, note: 'With their proverbs' },
-    { label: 'Questions answered', value: FAQ.length, note: 'On the public FAQ' },
+    { label: 'Questions answered', value: FAQ.length, note: 'In the contact section' },
   ];
 
   return (

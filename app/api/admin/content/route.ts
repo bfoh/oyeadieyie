@@ -15,6 +15,9 @@ type Action =
   | { action: 'add-update'; update: { title: string; date: string; body: string; image?: string; alt?: string } }
   | { action: 'set-update'; id: string; update: { title?: string; date?: string; body?: string; image?: string; alt?: string } }
   | { action: 'delete-update'; id: string }
+  | { action: 'add-statement'; statement: StatementFields }
+  | { action: 'set-statement'; id: string; statement: Partial<StatementFields> }
+  | { action: 'delete-statement'; id: string }
   | { action: 'add-event'; event: { title: string; date: string; time?: string; place?: string; body?: string; imageUrl?: string; imageAlt?: string } }
   | { action: 'set-event'; id: string; event: { title?: string; date?: string; time?: string; place?: string; body?: string; imageUrl?: string; imageAlt?: string } }
   | { action: 'delete-event'; id: string }
@@ -27,6 +30,24 @@ type Action =
   | { action: 'move-project'; id: string; direction: 'up' | 'down' }
   | { action: 'delete-project'; id: string }
   | { action: 'set-impact'; id: string; value?: number; label?: string; note?: string };
+
+/**
+ * What a statement carries.
+ *
+ * `date` is the one field that behaves differently from every other dated
+ * record here: it is OPTIONAL. The chief's standing words were not said on a
+ * day anybody recorded, and the office must be able to post them without
+ * inventing one. An empty date is accepted; a date that will not parse is not.
+ */
+type StatementFields = {
+  title: string;
+  date?: string;
+  occasion?: string;
+  body: string;
+  pullQuote?: string;
+  imageUrl?: string;
+  imageAlt?: string;
+};
 
 /* The vocabularies the public components switch on. A value outside them
    would render as an unstyled badge or drop out of the tag filter entirely,
@@ -81,6 +102,7 @@ export async function POST(request: Request) {
     const stillUsed =
       content.updates.some((u) => u.image === url) ||
       content.events.some((e) => e.imageUrl === url) ||
+      content.statements.some((st) => st.imageUrl === url) ||
       content.gallery.some((g) => g.url === url);
     if (!stillUsed) await deleteImageFile(url);
   };
@@ -147,6 +169,90 @@ export async function POST(request: Request) {
       const going = content.updates.find((u) => u.id === body.id);
       content.updates = content.updates.filter((u) => u.id !== body.id);
       await dropFileIfUnused(going?.image);
+      break;
+    }
+
+    /* Statements. The shape follows add-update, with one difference that
+       matters: an empty date is accepted and stored as undefined, because a
+       statement can be his standing words rather than a speech given on a
+       day. Anything non-empty must still parse. */
+    case 'add-statement': {
+      const title = clean(body.statement?.title, 160);
+      const text = clean(body.statement?.body, 4000);
+      const raw = clean(body.statement?.date, 10);
+      const date = raw ? cleanDate(raw) : '';
+      if (!title || !text) {
+        return NextResponse.json({ error: 'title_and_body_required' }, { status: 400 });
+      }
+      if (raw && !date) {
+        return NextResponse.json({ error: 'invalid_date' }, { status: 400 });
+      }
+      content.statements = [
+        {
+          id: newId(),
+          title,
+          date: date || undefined,
+          occasion: clean(body.statement?.occasion, 160) || undefined,
+          body: text,
+          pullQuote: clean(body.statement?.pullQuote, 300) || undefined,
+          imageUrl: clean(body.statement?.imageUrl, 400) || undefined,
+          imageAlt: clean(body.statement?.imageAlt, 200) || undefined,
+        },
+        ...content.statements,
+      ];
+      break;
+    }
+    case 'set-statement': {
+      const statement = content.statements.find((st) => st.id === body.id);
+      if (!statement) {
+        return NextResponse.json({ error: 'not_found' }, { status: 404 });
+      }
+      const f = body.statement ?? {};
+      if (typeof f.title === 'string') {
+        const title = clean(f.title, 160);
+        if (!title) {
+          return NextResponse.json({ error: 'title_and_body_required' }, { status: 400 });
+        }
+        statement.title = title;
+      }
+      if (typeof f.body === 'string') {
+        const text = clean(f.body, 4000);
+        if (!text) {
+          return NextResponse.json({ error: 'title_and_body_required' }, { status: 400 });
+        }
+        statement.body = text;
+      }
+      /* An empty string CLEARS the date, which is the office correcting a
+         wrong one down to nothing rather than being stuck with it. */
+      if (typeof f.date === 'string') {
+        const raw = clean(f.date, 10);
+        if (!raw) statement.date = undefined;
+        else {
+          const date = cleanDate(raw);
+          if (!date) {
+            return NextResponse.json({ error: 'invalid_date' }, { status: 400 });
+          }
+          statement.date = date;
+        }
+      }
+      if (typeof f.occasion === 'string')
+        statement.occasion = clean(f.occasion, 160) || undefined;
+      if (typeof f.pullQuote === 'string')
+        statement.pullQuote = clean(f.pullQuote, 300) || undefined;
+      /* The file it lets go of is reclaimed only once nothing points at it. */
+      if (typeof f.imageUrl === 'string') {
+        const was = statement.imageUrl;
+        statement.imageUrl = clean(f.imageUrl, 400) || undefined;
+        if (was && was !== statement.imageUrl) await dropFileIfUnused(was);
+      }
+      if (typeof f.imageAlt === 'string')
+        statement.imageAlt = clean(f.imageAlt, 200) || undefined;
+      break;
+    }
+    case 'delete-statement': {
+      const going = content.statements.find((st) => st.id === body.id);
+      content.statements = content.statements.filter((st) => st.id !== body.id);
+      await dropFileIfUnused(going?.imageUrl);
       break;
     }
 
@@ -299,7 +405,6 @@ export async function POST(request: Request) {
       if (typeof f.tag === 'string' && TAGS.includes(f.tag)) {
         project.tag = f.tag as typeof project.tag;
       }
-      if (f.lens === 'regal' || f.lens === 'modern') project.lens = f.lens;
       break;
     }
 

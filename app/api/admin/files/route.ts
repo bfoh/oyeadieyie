@@ -15,11 +15,17 @@ import { readContent, storeConfigured } from '@/lib/store';
  * The content document itself is excluded: it is the thing that does the
  * referencing, and its own old revisions are pruned on write.
  */
+/* EVERY record that can hold a photograph must be listed here. A record this
+   function does not know about has its picture reported as an orphan and
+   offered for deletion, which puts a broken image on the public page — the
+   exact failure the sweeper exists to prevent. Add to this when you add a
+   record type that carries an image. */
 function referencedUrls(content: Awaited<ReturnType<typeof readContent>>) {
   const urls = new Set<string>();
   content.gallery.forEach((g) => g.url && urls.add(g.url));
   content.updates.forEach((u) => u.image && urls.add(u.image));
   content.events.forEach((e) => e.imageUrl && urls.add(e.imageUrl));
+  content.statements.forEach((st) => st.imageUrl && urls.add(st.imageUrl));
   return urls;
 }
 

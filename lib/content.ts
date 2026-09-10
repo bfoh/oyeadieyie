@@ -1,33 +1,34 @@
-export type Lens = 'regal' | 'modern';
+/* ---------------------------------------------------------------
+   The record, compiled in.
 
-/**
- * Which lens a piece of content leads under.
- *
- * `regal` is the stool: custom, community, the people-facing work.
- * `modern` is the commercial engine: engineering, infrastructure, trade.
- * Nothing is ever hidden, only reordered, so the page never conceals part of
- * the record from a reader who does not touch the control.
- */
-export type LensAffinity = Lens;
+   Everything here changes rarely and should go through review, so it lives
+   in the repository rather than in the store. The store's seed comes from
+   here too: on a deployment with no store connected, `baseContent()` returns
+   these constants and the site renders exactly as it would have before there
+   was an admin.
 
-export function byLens<T extends { lens?: LensAffinity }>(
-  items: T[],
-  lens: Lens,
-): T[] {
-  return [...items].sort((a, b) => {
-    const av = a.lens === lens ? 0 : 1;
-    const bv = b.lens === lens ? 0 : 1;
-    return av - bv;
-  });
-}
+   There is no lens. The site used to carry a regal/modern control that
+   reordered the page; nine named sections replaced it, because a reader who
+   can see every subject by name does not need a control that reorders them.
+--------------------------------------------------------------- */
 
 export const CHIEF = {
   fullName: 'Nana Oyeadieyie Barima Essoun I',
   shortName: 'Nana Oyeadieyie',
-  title: 'Nkosuo Hene of Adrobaa',
+  /* The office's own wording. The stool is Adrobaa; the authority is the
+     traditional authority of Adrobaa, and the title names it in full. */
+  title: 'Nkosuo Hene of Adrobaa Traditional Authority',
+  /* The shorter form, for places where the full title will not fit on one
+     line: the nav pill, a card, a caption. */
+  titleShort: 'Nkosuo Hene of Adrobaa',
   titleMeaning: 'Development Chief',
+  authority: 'Adrobaa Traditional Authority',
   place: 'Adrobaa, Tano North',
   region: 'Ahafo Region, Ghana',
+  /* Four words, kept as four words rather than a joined string: the
+     separators between them are presentation, and a screen reader should
+     hear a list of four, not a sentence full of punctuation. */
+  strapline: ['Leadership', 'Service', 'Development', 'Tradition'],
   /* The chief's own words. Do not paraphrase this line. */
   motto: 'Development for the People, By the People.',
 };
@@ -50,9 +51,6 @@ export const COMPANY = {
    Hero
 --------------------------------------------------------------- */
 export const HERO = {
-  /* Kept to one line on a phone. Wide tracking makes an eyebrow long fast,
-     and the region already appears in the subline and the proof row. */
-  eyebrow: CHIEF.title,
   headline: ['Preserving heritage.', 'Funding progress.'],
   sub: 'Nana Oyeadieyie Barima Essoun I sits as Development Chief of Adrobaa while running a licensed precious metals business across three continents. One office builds the stool. The other funds it.',
   primary: { label: 'Request an appearance', href: '/#engage' },
@@ -67,10 +65,17 @@ export const HERO = {
 /* ---------------------------------------------------------------
    Dual profile
 --------------------------------------------------------------- */
+/**
+ * The two offices he holds, side by side.
+ *
+ * These were once two tabs behind a regal/modern toggle, which meant a reader
+ * who never touched the control saw only half of him. They now render as two
+ * panels of one section, because the point the site is making is that the
+ * commercial record and the development record are the same record.
+ */
 export const PROFILES = {
-  regal: {
-    key: 'regal' as const,
-    tab: 'The Ruler',
+  stool: {
+    key: 'stool' as const,
     heading: 'The stool of Adrobaa',
     lead: 'Enstooled as Nkosuo Hene, the Development Chief, with a mandate that is unusually literal: bring development to the town and answer for it.',
     image: '/img/chief-portrait.jpg',
@@ -99,9 +104,8 @@ export const PROFILES = {
       },
     ],
   },
-  modern: {
-    key: 'modern' as const,
-    tab: 'The Executive',
+  business: {
+    key: 'business' as const,
     heading: 'DeoMetals Ltd',
     lead: 'A licensed precious metals business covering sourcing, refining and export, operating as a member of DGSC Group. The commercial engine behind the development record.',
     image: '/img/exec-standing.jpg',
@@ -133,13 +137,67 @@ export const PROFILES = {
 };
 
 /* ---------------------------------------------------------------
-   B11 tagline reveal
+   The statement. The lead of the Speeches & Statements chapter.
 --------------------------------------------------------------- */
 export const TAGLINE =
   'My vision is to empower the youth with skills and training, and to bring development to the communities. Development for the People, By the People.';
 
 /* ---------------------------------------------------------------
-   Kingdom timeline
+   Speeches and statements
+--------------------------------------------------------------- */
+
+/**
+ * Something the chief has said, on the record.
+ *
+ * `date` is optional, and that is deliberate. A statement the office posts
+ * has a date, because it was made on a day. The entry seeded below has none:
+ * it is his standing words rather than a speech given on an occasion, and
+ * putting a date on it would be inventing one. Undated entries sort last and
+ * never reach the admin calendar, because a calendar entry without a date is
+ * not one.
+ */
+export type Statement = {
+  id: string;
+  date?: string;
+  title: string;
+  /* Where it was said. 'Enstoolment durbar, Adrobaa'. */
+  occasion?: string;
+  body: string;
+  /* The line the card is built around, set in display type. */
+  pullQuote?: string;
+  imageUrl?: string;
+  imageAlt?: string;
+};
+
+/**
+ * The seed.
+ *
+ * Both of these are verbatim and both were already in this file. Nothing was
+ * written for him: the first is `CHIEF.motto`, the second is `TAGLINE`, and
+ * the office replaces or adds to them at /admin/content.
+ */
+export const STATEMENTS: Statement[] = [
+  {
+    id: 'seed-motto',
+    title: 'The charge on the stool',
+    occasion: 'In his own words',
+    pullQuote: CHIEF.motto,
+    body: 'The line he uses for the whole of it. Development is not something the town receives; it is something the town does, with the stool finding and funding the means.',
+  },
+];
+
+/*
+ * There is deliberately only one seeded entry.
+ *
+ * TAGLINE is the section's own lead, set large and scrubbed word by word.
+ * Seeding it a second time as a card printed the identical sentence twice on
+ * one screen — once at sixty pixels and once at sixteen — which is not a
+ * record, it is a stutter. The motto survives as a card because the card says
+ * something the lead does not: what the line means.
+ */
+
+/* ---------------------------------------------------------------
+   The stool, in sequence. Drawn by components/Chieftaincy.tsx.
 --------------------------------------------------------------- */
 export const TIMELINE = [
   {
@@ -186,39 +244,34 @@ export const GALLERY = [
 ];
 
 /* ---------------------------------------------------------------
-   Vision pillars
+   What the stool is for. Drawn beneath the timeline in Chieftaincy.
 --------------------------------------------------------------- */
 export const PILLARS: {
   id: string;
-  lens?: LensAffinity;
   title: string;
   body: string;
   icon: string;
 }[] = [
   {
     id: 'youth',
-    lens: 'modern',
     title: 'Youth with a trade in hand',
     body: 'Skills and training rather than encouragement. Five young people go to fashion school every year on the stool.',
     icon: 'users',
   },
   {
     id: 'education',
-    lens: 'regal',
     title: 'Scholarships where ability outruns means',
     body: 'Support for brilliant but needy students, so that a place at school is decided by the pupil and not by the household budget.',
     icon: 'book',
   },
   {
     id: 'services',
-    lens: 'modern',
     title: 'The basics a town is owed',
     body: 'Clean drinking water from mechanised boreholes, public sanitation, ring roads and street lights. Services people can point at.',
     icon: 'buildings',
   },
   {
     id: 'environment',
-    lens: 'regal',
     title: 'A town that stays clean and green',
     body: 'Tree planting across the communities, and 150 dustbins already placed to keep the environment clean and hygienic.',
     icon: 'plant',
@@ -285,7 +338,6 @@ export const PROJECT_TAGS: ProjectTag[] = [
 export const PROJECTS: {
   id: string;
   title: string;
-  lens?: LensAffinity;
   tag: ProjectTag;
   status: ProjectStatus;
   body: string;
@@ -301,7 +353,6 @@ export const PROJECTS: {
   {
     id: 'toilets',
     title: 'Public toilets, 20 seaters',
-    lens: 'regal',
     tag: 'Sanitation',
     status: 'In construction',
     figure: '20 seaters',
@@ -339,7 +390,6 @@ export const PROJECTS: {
   {
     id: 'water',
     title: 'Clean drinking water',
-    lens: 'modern',
     tag: 'Water',
     status: 'Ongoing',
     body: 'Mechanised boreholes drilled in the communities. The rig, the casing and the first water are all on record, so the town can see the work rather than hear about it.',
@@ -369,7 +419,6 @@ export const PROJECTS: {
   {
     id: 'dustbins',
     title: 'Clean community initiative',
-    lens: 'regal',
     tag: 'Environment',
     status: 'Delivered',
     figure: '150 bins',
@@ -380,7 +429,6 @@ export const PROJECTS: {
   {
     id: 'roads',
     title: 'Street and ring roads',
-    lens: 'modern',
     tag: 'Infrastructure',
     status: 'Committed',
     body: 'Ring roads through the community, opening the routes that carry produce, pupils and trade between the settlements.',
@@ -390,7 +438,6 @@ export const PROJECTS: {
   {
     id: 'lights',
     title: 'Street lights',
-    lens: 'modern',
     tag: 'Infrastructure',
     status: 'Committed',
     body: 'Lighting along the community roads, so that the evening does not end movement, trade or safety in the town.',
@@ -401,7 +448,6 @@ export const PROJECTS: {
   {
     id: 'scholarships',
     title: 'Scholarships for brilliant but needy students',
-    lens: 'regal',
     tag: 'Education',
     status: 'Ongoing',
     body: 'Support for pupils whose ability outruns their means, so that a place at school is settled by the student and not by the household budget.',
@@ -412,7 +458,6 @@ export const PROJECTS: {
   {
     id: 'skills',
     title: 'Youth skills and training',
-    lens: 'modern',
     tag: 'Education',
     status: 'Ongoing',
     figure: '5 a year',
@@ -423,7 +468,6 @@ export const PROJECTS: {
   {
     id: 'trees',
     title: 'Green nature initiative',
-    lens: 'regal',
     tag: 'Environment',
     status: 'Ongoing',
     body: 'Tree planting across the communities, put in now for shade, soil and air that the town will use long after the planting is forgotten.',
@@ -578,7 +622,6 @@ export const FILM = {
 export const PRESS = [
   {
     id: 'award',
-    lens: 'regal' as const,
     kind: 'Photography',
     title: 'Recognitions and presentations',
     body: 'Award and plaque presentations received at the office, cleared for editorial use.',
@@ -587,7 +630,6 @@ export const PRESS = [
   },
   {
     id: 'business',
-    lens: 'modern' as const,
     kind: 'Business',
     title: 'DeoMetals Ltd, precious metals and global trade',
     body: 'Company imagery covering the licence, the operations and the trade lines.',
@@ -768,14 +810,37 @@ export function formatUpdateDate(iso: string): string {
   }).format(d);
 }
 
+/**
+ * The nine sections, in reading order.
+ *
+ * `label` is what the nav shows and `name` is the section's full name, used
+ * as its heading. The nav needs the short form because nine items have to sit
+ * in one pill; the page has room for the whole thing.
+ *
+ * `numeral` is the chapter mark. The record reads as nine chapters, and the
+ * numerals are Roman because the stool's holder is Essoun the First — the
+ * device belongs to this office and would be borrowed anywhere else.
+ */
 export const NAV_LINKS = [
-  { id: 'ruler', label: 'The Ruler' },
-  { id: 'kingdom', label: 'Adrobaa' },
-  { id: 'vision', label: 'Vision' },
-  { id: 'projects', label: 'Projects' },
-  { id: 'media', label: 'Media' },
-  { id: 'engage', label: 'Engage' },
-];
+  { id: 'about', label: 'About', name: 'About Nana', numeral: 'I' },
+  { id: 'chieftaincy', label: 'Chieftaincy', name: 'Chieftaincy & Leadership', numeral: 'II' },
+  { id: 'speeches', label: 'Speeches', name: 'Speeches & Statements', numeral: 'III' },
+  { id: 'development', label: 'Development', name: 'Community Development', numeral: 'IV' },
+  { id: 'events', label: 'Events', name: 'Events & Engagements', numeral: 'V' },
+  { id: 'culture', label: 'Culture', name: 'Traditional Culture', numeral: 'VI' },
+  { id: 'news', label: 'News', name: 'News & Media', numeral: 'VII' },
+  { id: 'gallery', label: 'Gallery', name: 'Gallery', numeral: 'VIII' },
+  { id: 'contact', label: 'Contact', name: 'Contact', numeral: 'IX' },
+] as const;
+
+export type SectionId = (typeof NAV_LINKS)[number]['id'];
+
+/** The chapter mark and full name for one section, by id. */
+export function chapter(id: SectionId) {
+  const found = NAV_LINKS.find((l) => l.id === id);
+  if (!found) throw new Error(`Unknown section: ${id}`);
+  return found;
+}
 
 /* Absolute so the link works from /media-kit as well as the home page. On the
    home page the browser still treats it as a same document fragment jump. */

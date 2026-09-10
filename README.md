@@ -1,6 +1,7 @@
 # Nana Oyeadieyie Barima Essoun I
 
-Official site for the Nkosuo Hene of Adrobaa, Tano North, Ahafo Region, Ghana.
+Official site for the Nkosuo Hene of Adrobaa Traditional Authority, Tano North,
+Ahafo Region, Ghana.
 
 Next.js 15, Tailwind, TypeScript. No database: the copy the office changes
 lives in a versioned JSON document in Vercel Blob, edited from `/admin`, and
@@ -17,9 +18,9 @@ npm run build && npm start
 Two places, and the split matters.
 
 **The store** — a JSON document in Vercel Blob, edited at `/admin` and read by
-`readContent()` in `lib/store.ts`. It holds the updates, the events, the
-gallery, the contact details, the enquiries the public form captures, and the
-development record (projects and impact figures). The office changes these
+`readContent()` in `lib/store.ts`. It holds the updates, the statements, the
+events, the gallery, the contact details, the enquiries the public form
+captures, and the development record (projects and impact figures). The office changes these
 without a developer, and the public site follows within about half a minute.
 
 **`lib/content.ts`** — the biography, the FAQ, the adinkra, the pillars, the
@@ -49,6 +50,7 @@ deploy; the brackets below are what a fresh deployment starts with.
 | `CONTACT.press` | `[PRESS EMAIL]` | Press desk address |
 | `CONTACT.whatsapp` | `[WHATSAPP NUMBER]` | International format, `233XXXXXXXXX`. Supplying it makes the WhatsApp route appear beside the form and in the footer. |
 | `lib/site.ts` | `SITE` | The real domain, for canonical, sitemap and Open Graph URLs. Override with `NEXT_PUBLIC_SITE_URL`. |
+| `CHIEF.title` | `Adrobaa Traditional Authority` | Adopted on the office's written instruction. The repository had only "Adrobaa" before it. **Confirm the authority's formal name with the palace**, since an unverified institutional name in a chief's title is exactly the class of claim this site otherwise refuses to print. |
 | Impact figures | investment, reach, communities | Figures the traditional council can produce if a journalist asks. Set them at `/admin/projects`; the projects count is derived from the list and cannot be typed in. |
 
 ### The engagement form
@@ -209,18 +211,71 @@ biographies, forms of address, terms and a captioned manifest, then prints the
 size and count to paste back into `KIT`. Run it whenever the photography or the
 biography changes. It fails loudly if a listed photograph is missing.
 
-The lens toggle is hidden off the home page, because nothing on a sub page
-responds to it and a control that does nothing reads as broken.
+The lens toggle that used to be hidden here is gone from the whole site; see
+**There was a lens, and there is not any more**.
 
-## The lens
+## The nine sections
 
-Regal and Modern reorder the page, they never filter it. Every item stays
-reachable whichever lens is active, so the record is never partly concealed
-from a reader who does not touch the control. Affinities live on the content
-itself (`lens: 'regal' | 'modern'`) and `byLens()` does a stable sort.
+The public page is nine named chapters in the order the office set out, on one
+scroll, and `NAV_LINKS` in `lib/content.ts` is the single list that names them:
 
-It drives: the hero subline, the Ruler panel, project order and lead sentence,
-vision pillar order, and press item order.
+| Anchor | Chapter | Built from |
+|---|---|---|
+| `#about` | About Nana | `BIO_LONG` from the press kit, plus the stool and DeoMetals fact panels |
+| `#chieftaincy` | Chieftaincy & Leadership | `TIMELINE` and `PILLARS` |
+| `#speeches` | Speeches & Statements | `TAGLINE` as the scrubbed lead, plus `statements` from the store |
+| `#development` | Community Development | projects, impact, `ProjectProgress` |
+| `#events` | Events & Engagements | events from the store, and `ENGAGE_ROUTES` |
+| `#culture` | Traditional Culture | `ADINKRA`, the enstoolment film, ceremonial photography |
+| `#news` | News & Media | updates from the store, `PRESS`, the press kit |
+| `#gallery` | Gallery | the gallery from the store, with a lightbox |
+| `#contact` | Contact | the engagement form, contact details and the FAQ |
+
+`NAV_LINKS` carries `label` (the nav's short form), `name` (the heading) and
+`numeral`. Add a section by adding an entry there and a `<Section id="...">`;
+nothing else needs to know.
+
+**`#contact` also carries `id="engage"`.** Links to `/#engage` were shared
+before this section was called Contact, and a fragment cannot be redirected.
+
+### Three openings, not one repeated nine times
+
+`components/Section.tsx` draws the chapter mark: the numeral, a hairline, the
+name. Every section used to open with the same gold rule over the same tracked
+capitals — a category label, nine times, which is chrome rather than
+information. The numeral carries something a reader actually wants: where they
+are in the nine. They are Roman because the holder of the stool is Essoun the
+First.
+
+The `SectionHead` variants cycle so the page does not drone:
+
+- **wide** — numeral, name and lead across the measure. About, Development, News.
+- **split** — numeral and name in a narrow column, content beside. Chieftaincy,
+  Events, Contact.
+- **quiet** — nothing drawn; the content is its own heading. Speeches, Culture,
+  Gallery. `<Section quiet>` puts an `sr-only` heading in place so all nine
+  chapters are still in the outline a screen reader builds.
+
+Spend the boldness in one place: the statement in `#speeches` takes the whole
+measure with no chrome at all, and everything around it stays quiet so that it
+can.
+
+### There was a lens, and there is not any more
+
+The site used to carry a Regal / Modern toggle that reordered — never filtered
+— the hero subline, the profile panel, the projects, the pillars and the press
+items. It is gone, along with `LensContext`, `byLens()` and every `lens:` field.
+
+Nine sections named after their subjects give a reader the whole record by
+name. A control that reorders what is already named is chrome, and it cost a
+provider, a hook, a sort and a field on four content types. If it is ever
+wanted back, it was a stable sort keyed on an affinity declared on the content
+itself.
+
+The dual profile went with it. **About Nana carries both offices at once**,
+because the point the site makes is that the commercial record and the
+development record are the same record, and a control that showed one at a time
+argued against it.
 
 ### Nav active state
 
@@ -228,6 +283,12 @@ The section observer uses a thin trigger band with `threshold: 0`, never an
 area ratio. A ratio is measured against the section's own height, so with a
 shrunken root a tall section can never reach it: Adrobaa and Projects capped at
 0.16 and never highlighted. Do not reintroduce a threshold above 0 here.
+Verified across all nine sections after the restructure.
+
+**Nine links need room.** They sit in the pill from `xl` up and live in the
+overlay below it; the wordmark steps to the shorter form of his name until
+`2xl`. The overlay scrolls rather than centring, because a centred column of
+nine loses its FIRST item behind the pill — where nobody thinks to look.
 
 ## Video encoding, read this before re encoding
 
@@ -290,7 +351,8 @@ The phone layout is not the desktop layout shrunk. Specific decisions:
 - **Project filters are one swipeable snap row** under `sm`; they wrapped to
   three rows and 154px of chrome.
 - **Section padding steps down one token** under `sm`.
-- Menu overlay links are numbered and the lens toggle carries full labels.
+- Menu overlay links carry their chapter numeral, and the overlay scrolls
+  rather than centring, since nine items no longer fit a centred column.
 - `-webkit-tap-highlight-color: transparent` and `overscroll-behavior-y: none`,
   since the components carry their own quieter pressed states.
 
@@ -363,10 +425,16 @@ the numeric keys. If headings ever look flat again, check that block first.
 - **`text-ivory/40` is 3.67:1 on the ebony ground and fails AA.** Small text
   uses `/50` (5.08:1). `gold-dim` is 4.17:1: borders and hover states only,
   never text.
-- **The profile toggle is buttons with `aria-pressed`, not tabs.** It carried
-  `role="tab"` without arrow-key navigation or a roving tabindex, which
-  promises behaviour the page does not have. The panel is `aria-live="polite"`
-  because the lens rewrites it silently.
+- **The profile toggle is gone**, and with it a `role="tab"` that carried no
+  arrow-key navigation or roving tabindex — markup promising behaviour the page
+  did not have. About Nana shows both offices at once instead. The pattern is
+  worth remembering for the timeline in Chieftaincy, which is still buttons
+  with `aria-pressed` and never tabs, and whose caption is `aria-live="polite"`
+  because it is rewritten in place.
+- **The gallery lightbox is modal in the same way the menu is.** Focus moves
+  in, is trapped, and returns to the tile that opened it; Escape closes; arrows
+  move between photographs; Lenis is stopped through `nav:lock` / `nav:unlock`
+  rather than by reaching into the motion system.
 
 ## Performance decisions worth keeping
 
@@ -464,8 +532,8 @@ absent from the sitemap.
 
 ### Managing the site
 
-`/admin/content` edits the noticeboard: updates, events, gallery photographs
-and the contact details. `/admin/projects` edits the development record — the
+`/admin/content` edits the noticeboard: updates, statements, events, gallery
+photographs and the contact details. `/admin/projects` edits the development record — the
 projects and the three stated impact figures. `/admin/enquiries` is everything
 the public form has sent. The adinkra, the biography and the FAQ stay in
 `lib/content.ts`.
@@ -652,10 +720,28 @@ Three things worth keeping:
   re-flow previews to fit their container, or a thumbnail stops being an
   honest miniature of the sheet.
 
+## Statements
+
+Posted at `/admin/content` under **Statements**, and rendered by
+`components/Speeches.tsx` beneath the vision statement.
+
+**The date is optional, and it is the only dated record here where that is
+true.** His standing words were not said on a day anybody recorded, and the
+office must be able to post them without inventing one. An empty date is
+stored as `undefined`; a non-empty one that will not parse is refused. Undated
+entries sort last on the page and never reach the admin calendar, because a
+calendar entry without a date is not one.
+
+`STATEMENTS` in `lib/content.ts` seeds exactly one entry: his motto, with a
+paragraph on what it means. `TAGLINE` is deliberately **not** seeded as a card
+as well — it is already the section's lead, set large and scrubbed word by
+word, and printing the same sentence twice on one screen is a stutter rather
+than a record.
+
 ## Updates
 
 Posted at `/admin/content`, stored with an ISO `date`, and rendered newest
-first by `components/Updates.tsx`, which renders nothing at all while there
+first by `components/News.tsx`, which renders nothing at all while there
 are none. The home page shows the three most recent (`HOME_LIMITS.updates`);
 older ones stay in the store but have no archive page to fall back to, and the
 admin says so. Nothing else on the site carries a date, so this is the only

@@ -16,8 +16,9 @@ export default async function ContentPage() {
           Manage the site
         </h1>
         <p className="mt-200 max-w-measure text-base leading-relaxed text-ivory/65">
-          Updates, events, photographs and the office&apos;s contact details.
-          Changes appear on the public site within about half a minute.
+          Updates, statements, events, photographs and the office&apos;s
+          contact details. Changes appear on the public site within about half
+          a minute.
         </p>
       </header>
       <ContentManager initial={content} configured={storeConfigured()} />

@@ -1,11 +1,13 @@
 import { put, list, del } from '@vercel/blob';
 import {
   UPDATES,
+  STATEMENTS,
   GALLERY,
   CONTACT,
   PROJECTS,
   IMPACT,
   type Update,
+  type Statement,
 } from './content';
 
 /**
@@ -84,6 +86,9 @@ export type StoredImpact = (typeof IMPACT)[number];
 
 export type SiteContent = {
   updates: Update[];
+  /* What the chief has said, on the record. Seeded from STATEMENTS so the
+     section is never empty on a deployment that has never been edited. */
+  statements: Statement[];
   events: SiteEvent[];
   gallery: GalleryImage[];
   enquiries: Enquiry[];
@@ -132,6 +137,7 @@ export function storeConfigured(): boolean {
 export function baseContent(): SiteContent {
   return {
     updates: UPDATES,
+    statements: STATEMENTS,
     events: [],
     gallery: GALLERY.map((g, i) => ({
       id: `built-in-${i}`,
@@ -203,6 +209,12 @@ export async function readContent(
     const base = baseContent();
     return {
       updates: parsed.updates ?? base.updates,
+      /* Null-checked, not length-checked. An empty array is a real answer
+         here: it means the office deleted the seeded line on purpose, and
+         falling back to the seed would resurrect what it deleted. Only a
+         document written before statements existed has no key at all, and
+         that one gets the seed. */
+      statements: parsed.statements ?? base.statements,
       events: parsed.events ?? base.events,
       gallery: parsed.gallery ?? base.gallery,
       enquiries: parsed.enquiries ?? base.enquiries,

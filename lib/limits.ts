@@ -14,6 +14,8 @@
 export const HOME_LIMITS = {
   /* Newest first. */
   updates: 3,
+  /* Newest first, undated last. */
+  statements: 3,
   /* Soonest first, and only those still ahead. */
   events: 4,
   gallery: 9,

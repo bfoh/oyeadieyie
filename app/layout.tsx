@@ -45,13 +45,15 @@ const sans = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
   alternates: { canonical: '/' },
-  title: 'Nana Oyeadieyie Barima Essoun I, Nkosuo Hene of Adrobaa',
+  title:
+    'Nana Oyeadieyie Barima Essoun I, Nkosuo Hene of Adrobaa Traditional Authority',
   description:
     'Official site of Nana Oyeadieyie Barima Essoun I, Development Chief of Adrobaa in Tano North, Ahafo. Appearances, development projects and press resources.',
   keywords: [
     'Nana Oyeadieyie Barima Essoun',
     'Nkosuo Hene',
     'Adrobaa',
+    'Adrobaa Traditional Authority',
     'Tano North',
     'Ahafo Region',
     'Ghana traditional leadership',
@@ -63,9 +65,10 @@ export const metadata: Metadata = {
     locale: 'en_GH',
     url: SITE,
     siteName: 'Nana Oyeadieyie Barima Essoun I',
-    title: 'Nana Oyeadieyie Barima Essoun I, Nkosuo Hene of Adrobaa',
+    title:
+      'Nana Oyeadieyie Barima Essoun I, Nkosuo Hene of Adrobaa Traditional Authority',
     description:
-      'Development Chief of Adrobaa, Tano North. Preserving heritage, funding progress.',
+      'Development Chief of Adrobaa, Tano North. Leadership, service, development, tradition.',
     images: [
       {
         url: '/img/hero-poster-v2.jpg',
@@ -77,9 +80,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Nana Oyeadieyie Barima Essoun I, Nkosuo Hene of Adrobaa',
+    title:
+      'Nana Oyeadieyie Barima Essoun I, Nkosuo Hene of Adrobaa Traditional Authority',
     description:
-      'Development Chief of Adrobaa, Tano North. Preserving heritage, funding progress.',
+      'Development Chief of Adrobaa, Tano North. Leadership, service, development, tradition.',
     images: ['/img/hero-poster-v2.jpg'],
   },
   icons: {
@@ -112,12 +116,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en-GH" className={`${display.variable} ${sans.variable} ${wordmark.variable}`}>
-      {/* No <link rel="preload"> for the hero still. The <picture> in Hero
-          carries fetchPriority="high" and sits at the top of the document, so
-          the preload scanner finds it and resolves <source media> itself.
-          Preload links were tried here and fetched BOTH orientations despite
-          their media attributes, which is the exact waste they were meant to
-          prevent. */}
+      {/* No <link rel="preload"> for the hero still. It is a CSS background
+          on .hero-still, chosen by one media query, so the browser fetches
+          exactly one file during the preload scan. Preload links were tried
+          here and fetched BOTH orientations despite their media attributes,
+          which is the exact waste they were meant to prevent. */}
       <body className="font-sans antialiased bg-ebony text-ivory">
         <a href="#main" className="skip-link inline-flex min-h-[44px] items-center rounded-lg bg-gold px-200 py-100 text-sm font-semibold text-ebony">
           Skip to content

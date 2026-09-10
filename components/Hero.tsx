@@ -3,7 +3,6 @@
 import { useEffect, useRef } from 'react';
 import { ArrowDownRight, ArrowRight } from '@phosphor-icons/react/dist/ssr';
 import { HERO, CHIEF } from '@/lib/content';
-import { useLens } from './LensContext';
 
 /* Versioned so the immutable cache headers cannot serve the old encode. */
 const VIDEO_ID = 'hero-video';
@@ -13,7 +12,6 @@ const POSTER_DESKTOP = '/img/hero-poster-v2.jpg';
 const POSTER_MOBILE = '/img/hero-poster-mobile-v2.jpg';
 
 export function Hero() {
-  const { lens } = useLens();
   const videoRef = useRef<HTMLVideoElement>(null);
 
   /**
@@ -148,23 +146,47 @@ export function Hero() {
 
       <div className="relative z-10 flex min-h-[100svh] flex-col justify-end px-300 pb-400 pt-800 sm:px-500 sm:pb-500 sm:pt-900 lg:px-800">
         <div className="mx-auto w-full max-w-[1280px]">
-          {/* Eyebrow */}
-          <div
-            data-hero-item
-            data-hero-eyebrow
-            className="flex items-center gap-100"
-          >
-            <span className="rule-gold w-[40px] shrink-0" aria-hidden="true" />
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold">
-              {HERO.eyebrow}
+          {/* The title block, as the office set it out: the name, the office
+              he holds in full, and the four words under it.
+
+              The name is set in the wordmark treatment — Roman capitals,
+              light, widely letterspaced. Caps set tight read as a shout; caps
+              set open read as an inscription, and this is an inscription. */}
+          <div data-hero-item data-hero-eyebrow>
+            <p className="font-wordmark text-base font-600 uppercase leading-tight tracking-[0.15em] text-ivory sm:text-xl sm:tracking-[0.18em]">
+              {CHIEF.fullName}
             </p>
+            <p className="mt-75 text-sm text-gold sm:text-base">{CHIEF.title}</p>
+
+            {/* Four words, and four words is what a screen reader hears: the
+                separators are drawn between the items rather than typed into
+                them, so nothing reads out a row of dots. */}
+            <ul className="mt-200 flex flex-wrap items-center gap-y-50">
+              {CHIEF.strapline.map((word, i) => (
+                <li
+                  key={word}
+                  className="flex items-center text-sm italic text-ivory/70 sm:text-base"
+                >
+                  {/* The separator sits in the gap, not against the word
+                      before it: it is drawn as the first child of the item
+                      that follows, with equal space either side of it. */}
+                  {i > 0 && (
+                    <span
+                      aria-hidden="true"
+                      className="mx-200 h-[3px] w-[3px] shrink-0 rounded-full bg-gold sm:mx-300"
+                    />
+                  )}
+                  {word}
+                </li>
+              ))}
+            </ul>
           </div>
 
           {/* B5: max width 680px, meaningful line breaks, cream to muted gradient */}
           <h1
             data-hero-item
             data-hero-headline
-            className="mt-200 max-w-measure font-display text-4xl font-600 leading-[1.06] sm:text-6xl lg:text-7xl"
+            className="mt-300 max-w-measure font-display text-4xl font-600 leading-[1.06] sm:text-6xl lg:text-7xl"
           >
             {HERO.headline.map((line) => (
               <span key={line} className="hero-line-mask">
@@ -178,9 +200,7 @@ export function Hero() {
             data-hero-sub
             className="mt-300 max-w-measure text-base leading-relaxed text-ivory/75 sm:text-lg"
           >
-            {lens === 'regal'
-              ? HERO.sub
-              : 'Nana Oyeadieyie Barima Essoun I runs DeoMetals Ltd, a licensed precious metals business, and holds the Nkosuo stool of Adrobaa. The commercial record and the development record are the same record.'}
+            {HERO.sub}
           </p>
 
           {/* One primary action. B2 button padding, B1 button type. */}
@@ -229,8 +249,11 @@ export function Hero() {
             ))}
           </ul>
 
+          {/* The place, which the title block does not carry and the headline
+              should not. Everything else it used to duplicate is now printed
+              above, where a sighted reader sees it too. */}
           <p className="sr-only">
-            {CHIEF.fullName}, {CHIEF.title}, {CHIEF.place}, {CHIEF.region}.
+            {CHIEF.place}, {CHIEF.region}.
           </p>
         </div>
       </div>
