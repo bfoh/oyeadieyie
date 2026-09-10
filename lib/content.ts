@@ -817,20 +817,21 @@ export function formatUpdateDate(iso: string): string {
  * as its heading. The nav needs the short form because nine items have to sit
  * in one pill; the page has room for the whole thing.
  *
- * `numeral` is the chapter mark. The record reads as nine chapters, and the
- * numerals are Roman because the stool's holder is Essoun the First — the
- * device belongs to this office and would be borrowed anywhere else.
+ * There is deliberately no numeral here. These are subjects a reader picks
+ * from, not steps they work through, and numbering them asserted an order the
+ * content does not have. The mobile menu still counts its links, because that
+ * genuinely is a list read top to bottom.
  */
 export const NAV_LINKS = [
-  { id: 'about', label: 'About', name: 'About Nana', numeral: 'I' },
-  { id: 'chieftaincy', label: 'Chieftaincy', name: 'Chieftaincy & Leadership', numeral: 'II' },
-  { id: 'speeches', label: 'Speeches', name: 'Speeches & Statements', numeral: 'III' },
-  { id: 'development', label: 'Development', name: 'Community Development', numeral: 'IV' },
-  { id: 'events', label: 'Events', name: 'Events & Engagements', numeral: 'V' },
-  { id: 'culture', label: 'Culture', name: 'Traditional Culture', numeral: 'VI' },
-  { id: 'news', label: 'News', name: 'News & Media', numeral: 'VII' },
-  { id: 'gallery', label: 'Gallery', name: 'Gallery', numeral: 'VIII' },
-  { id: 'contact', label: 'Contact', name: 'Contact', numeral: 'IX' },
+  { id: 'about', label: 'About', name: 'About Nana' },
+  { id: 'chieftaincy', label: 'Chieftaincy', name: 'Chieftaincy & Leadership' },
+  { id: 'speeches', label: 'Speeches', name: 'Speeches & Statements' },
+  { id: 'development', label: 'Development', name: 'Community Development' },
+  { id: 'events', label: 'Events', name: 'Events & Engagements' },
+  { id: 'culture', label: 'Culture', name: 'Traditional Culture' },
+  { id: 'news', label: 'News', name: 'News & Media' },
+  { id: 'gallery', label: 'Gallery', name: 'Gallery' },
+  { id: 'contact', label: 'Contact', name: 'Contact' },
 ] as const;
 
 export type SectionId = (typeof NAV_LINKS)[number]['id'];

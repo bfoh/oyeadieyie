@@ -337,7 +337,7 @@ export function Nav() {
                     aria-hidden="true"
                     className="font-sans text-xs tracking-[0.2em] text-gold/70"
                   >
-                    {link.numeral}
+                    {String(i + 1).padStart(2, '0')}
                   </span>
                 </a>
               </li>

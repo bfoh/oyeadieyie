@@ -231,23 +231,30 @@ scroll, and `NAV_LINKS` in `lib/content.ts` is the single list that names them:
 | `#gallery` | Gallery | the gallery from the store, with a lightbox |
 | `#contact` | Contact | the engagement form, contact details and the FAQ |
 
-`NAV_LINKS` carries `label` (the nav's short form), `name` (the heading) and
-`numeral`. Add a section by adding an entry there and a `<Section id="...">`;
-nothing else needs to know.
+`NAV_LINKS` carries `label` (the nav's short form) and `name` (the heading).
+Add a section by adding an entry there and a `<Section id="...">`; nothing
+else needs to know.
 
 **`#contact` also carries `id="engage"`.** Links to `/#engage` were shared
 before this section was called Contact, and a fragment cannot be redirected.
 
 ### Three openings, not one repeated nine times
 
-`components/Section.tsx` draws the chapter mark: the numeral, a hairline, the
-name. Every section used to open with the same gold rule over the same tracked
+Every section used to open with the same gold rule over the same tracked
 capitals — a category label, nine times, which is chrome rather than
-information. The numeral carries something a reader actually wants: where they
-are in the nine. They are Roman because the holder of the stool is Essoun the
-First.
+information.
 
-The `SectionHead` variants cycle so the page does not drone:
+**It briefly carried Roman numerals instead, and those were worse.** Numbered
+markers earn their place on a sequence: a stepped process, a timeline, a ranked
+list. Nine named subjects are not one. Nobody reads About, then Chieftaincy,
+then Speeches in order — they arrive from the nav at the one they came for, so
+a numeral asserts an order the content does not have. They were also hard to
+read: VI, VII and VIII differ by a single stroke, and at small size with open
+tracking a reader has to count them. The tie to Essoun the First was a pun, not
+information. Do not reintroduce them.
+
+What fixed the monotony was the openings, not the numbers. `SectionHead` draws
+a hairline and the name; the variants cycle so the page does not drone:
 
 - **wide** — numeral, name and lead across the measure. About, Development, News.
 - **split** — numeral and name in a narrow column, content beside. Chieftaincy,
@@ -351,8 +358,10 @@ The phone layout is not the desktop layout shrunk. Specific decisions:
 - **Project filters are one swipeable snap row** under `sm`; they wrapped to
   three rows and 154px of chrome.
 - **Section padding steps down one token** under `sm`.
-- Menu overlay links carry their chapter numeral, and the overlay scrolls
-  rather than centring, since nine items no longer fit a centred column.
+- Menu overlay links are numbered `01`–`09` and the overlay scrolls rather
+  than centring, since nine items no longer fit a centred column. The numbers
+  stay here, and only here: this genuinely is a list read top to bottom, where
+  a count helps a reader keep their place.
 - `-webkit-tap-highlight-color: transparent` and `overscroll-behavior-y: none`,
   since the components carry their own quieter pressed states.
 

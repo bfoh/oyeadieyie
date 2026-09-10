@@ -22,6 +22,7 @@ import { Nav } from '@/components/Nav';
 import { MotionProvider } from '@/components/motion/MotionProvider';
 import { AdinkraCloth } from '@/components/AdinkraCloth';
 import { CopyBlock } from '@/components/CopyBlock';
+import { Kicker } from '@/components/Section';
 import { Reveal } from '@/components/Reveal';
 import { Footer } from '@/components/Footer';
 
@@ -67,12 +68,7 @@ export default async function MediaKit() {
 
             <div className="mt-300 flex items-center gap-100">
               <span className="rule-gold w-[40px] shrink-0" aria-hidden="true" />
-              <p
-                data-choreo-label
-                className="text-xs font-semibold uppercase tracking-[0.18em] text-gold"
-              >
-                For editorial use
-              </p>
+              <Kicker>For editorial use</Kicker>
             </div>
             <h1
               data-choreo-heading
@@ -119,12 +115,7 @@ export default async function MediaKit() {
           className="relative border-t border-ebony-line bg-ebony-raised/45 px-300 py-700 sm:px-500 sm:py-800 lg:px-800"
         >
           <div className="relative mx-auto w-full max-w-[1280px]">
-            <p
-              data-choreo-label
-              className="text-xs font-semibold uppercase tracking-[0.18em] text-gold"
-            >
-              Protocol
-            </p>
+            <Kicker>Protocol</Kicker>
             <h2
               data-choreo-heading
               className="mt-100 max-w-measure font-display text-4xl font-600 leading-[1.1] text-ivory sm:mt-200 sm:text-5xl"
@@ -140,7 +131,7 @@ export default async function MediaKit() {
                       key={row.label}
                       className="rounded-2xl border border-ebony-line bg-ebony/70 p-300 backdrop-blur-sm"
                     >
-                      <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-gold">
+                      <dt className="text-sm text-gold">
                         {row.label}
                       </dt>
                       <dd className="mt-75 font-display text-xl leading-snug text-ivory">
@@ -168,12 +159,7 @@ export default async function MediaKit() {
           className="relative border-t border-ebony-line bg-transparent px-300 py-700 sm:px-500 sm:py-800 lg:px-800"
         >
           <div className="relative mx-auto w-full max-w-[1280px]">
-            <p
-              data-choreo-label
-              className="text-xs font-semibold uppercase tracking-[0.18em] text-gold"
-            >
-              Approved copy
-            </p>
+            <Kicker>Approved copy</Kicker>
             <h2
               data-choreo-heading
               className="mt-100 max-w-measure font-display text-4xl font-600 leading-[1.1] text-ivory sm:mt-200 sm:text-5xl"
@@ -213,12 +199,7 @@ export default async function MediaKit() {
           className="relative border-t border-ebony-line bg-ebony-raised/45 px-300 py-700 sm:px-500 sm:py-800 lg:px-800"
         >
           <div className="relative mx-auto w-full max-w-[1280px]">
-            <p
-              data-choreo-label
-              className="text-xs font-semibold uppercase tracking-[0.18em] text-gold"
-            >
-              Photography
-            </p>
+            <Kicker>Photography</Kicker>
             <h2
               data-choreo-heading
               className="mt-100 max-w-measure font-display text-4xl font-600 leading-[1.1] text-ivory sm:mt-200 sm:text-5xl"
@@ -294,12 +275,7 @@ export default async function MediaKit() {
           className="relative border-t border-ebony-line bg-transparent px-300 py-700 sm:px-500 sm:py-800 lg:px-800"
         >
           <div className="relative mx-auto w-full max-w-[1280px]">
-            <p
-              data-choreo-label
-              className="text-xs font-semibold uppercase tracking-[0.18em] text-gold"
-            >
-              Film and company
-            </p>
+            <Kicker>Film and company</Kicker>
             <h2
               data-choreo-heading
               className="mt-100 max-w-measure font-display text-4xl font-600 leading-[1.1] text-ivory sm:mt-200 sm:text-5xl"
@@ -375,12 +351,7 @@ export default async function MediaKit() {
           className="relative border-t border-ebony-line bg-ebony-raised/45 px-300 py-700 sm:px-500 sm:py-800 lg:px-800"
         >
           <div className="relative mx-auto w-full max-w-[1280px]">
-            <p
-              data-choreo-label
-              className="text-xs font-semibold uppercase tracking-[0.18em] text-gold"
-            >
-              Terms
-            </p>
+            <Kicker>Terms</Kicker>
             <h2
               data-choreo-heading
               className="mt-100 max-w-measure font-display text-4xl font-600 leading-[1.1] text-ivory sm:mt-200 sm:text-5xl"

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { CHIEF } from '@/lib/content';
+import { Kicker } from '@/components/Section';
 
 export const metadata = { title: 'Page not found, Adrobaa' };
 
@@ -24,9 +25,9 @@ export default function NotFound() {
         <path d="m9.4 6.1 2.6-2.6 2.6 2.6" />
       </svg>
 
-      <p className="mt-300 text-xs font-semibold uppercase tracking-[0.18em] text-gold">
-        Sankofa, go back and get it
-      </p>
+      {/* The page is centred, so the kicker's hairline is centred with it
+          rather than hanging off the left as it does in a section. */}
+      <Kicker choreo={false} className="mt-300 justify-center">Sankofa, go back and get it</Kicker>
       <h1 className="mt-200 max-w-measure font-display text-5xl font-600 leading-tight text-ivory sm:text-6xl">
         This page is not on the stool
       </h1>

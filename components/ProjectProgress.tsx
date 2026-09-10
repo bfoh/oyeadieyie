@@ -31,9 +31,7 @@ export function ProjectProgress({ projects }: { projects: StoredProject[] }) {
               <h3 className="font-display text-2xl font-600 text-ivory">
                 {project.title}
               </h3>
-              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-gold">
-                {project.status}
-              </span>
+              <span className="text-sm text-gold">{project.status}</span>
             </figcaption>
 
             {/* Scrolls rather than shrinks: four frames squeezed into a phone

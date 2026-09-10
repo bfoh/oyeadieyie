@@ -37,6 +37,7 @@ export function News({ updates }: { updates: Update[] }) {
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, HOME_LIMITS.updates);
 
+
   return (
     <Section id="news">
       <SectionHead
@@ -45,45 +46,38 @@ export function News({ updates }: { updates: Update[] }) {
       />
 
       {shown.length > 0 && (
-        <ul
-          data-reveal-group
-          className="mt-600 grid gap-300 md:grid-cols-2 lg:grid-cols-3"
-        >
+        /* The newest entry leads and spans the row.
+           Three identical cards say the borehole commissioned last week and
+           the note posted in March carry the same weight. On a record whose
+           whole job is to accumulate, the most recent thing is the point.
+           One list, because it is one record. */
+        <ul data-reveal-group className="mt-600 grid gap-300 md:grid-cols-2">
           {shown.map((item, i) => (
-            <Reveal as="li" item key={item.id} delay={i * 70}>
-              <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-ebony-line bg-ebony transition-all duration-700 ease-fluid hover:-translate-y-[4px] hover:border-gold-dim hover:shadow-[0_18px_50px_rgba(0,0,0,0.5)]">
-                {item.image && (
-                  <div className="relative aspect-[16/10] w-full overflow-hidden bg-ebony-card">
-                    <Image
-                      src={item.image}
-                      alt={item.alt ?? item.title}
-                      fill
-                      loading="lazy"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      className="object-cover transition-transform duration-[1200ms] ease-fluid group-hover:scale-[1.05]"
-                    />
-                  </div>
-                )}
-                <div className="flex flex-1 flex-col p-300">
-                  {/* A machine readable date beside the printed one, so the
-                      entry can be cited and syndicated correctly. */}
-                  <time dateTime={item.date} className="text-sm text-gold">
-                    {formatUpdateDate(item.date)}
-                  </time>
-                  <h3 className="mt-100 font-display text-2xl font-600 leading-snug text-ivory">
-                    {item.title}
-                  </h3>
-                  <p className="mt-100 text-base leading-relaxed text-ivory/65">
-                    {item.body}
-                  </p>
-                </div>
-              </article>
+            <Reveal
+              as="li"
+              item
+              key={item.id}
+              delay={i * 70}
+              className={i === 0 ? 'md:col-span-2' : ''}
+            >
+              <UpdateCard update={item} feature={i === 0} />
             </Reveal>
           ))}
         </ul>
       )}
 
-      <div className="mt-800 grid gap-500 border-t border-ebony-line pt-600 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-start">
+      {/* The divider belongs between two things. With no dated entries above
+          it there is only one thing, and a rule with nothing on one side of it
+          plus eighty pixels of space reads as a section that failed to load
+          rather than as a section that is empty on purpose. */}
+      <div
+        className={[
+          'grid gap-500 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-start',
+          shown.length > 0
+            ? 'mt-800 border-t border-ebony-line pt-600'
+            : 'mt-600',
+        ].join(' ')}
+      >
         <ul data-reveal-group className="grid gap-300 sm:grid-cols-2">
           {PRESS.map((item, i) => (
             <Reveal as="li" item key={item.id} delay={i * 70}>
@@ -164,5 +158,84 @@ export function News({ updates }: { updates: Update[] }) {
         </Reveal>
       </div>
     </Section>
+  );
+}
+
+/**
+ * One dated entry.
+ *
+ * `feature` gives the newest entry the width to be read. The date, the title
+ * and the body are the same in both; only the room they are given changes,
+ * and an entry with no photograph still leads properly rather than collapsing
+ * into a half-empty box.
+ */
+function UpdateCard({
+  update,
+  feature = false,
+}: {
+  update: Update;
+  feature?: boolean;
+}) {
+  return (
+    <article
+      className={[
+        'group h-full overflow-hidden rounded-2xl border border-ebony-line bg-ebony transition-all duration-700 ease-fluid hover:border-gold-dim hover:shadow-[0_18px_50px_rgba(0,0,0,0.5)]',
+        feature
+          ? update.image
+            ? 'grid lg:grid-cols-[minmax(0,6fr)_minmax(0,6fr)] lg:items-stretch'
+            : 'flex flex-col'
+          : 'flex flex-col hover:-translate-y-[4px]',
+      ].join(' ')}
+    >
+      {update.image && (
+        <div
+          className={[
+            'relative w-full overflow-hidden bg-ebony-card',
+            feature ? 'aspect-[16/10] lg:h-full' : 'aspect-[16/10]',
+          ].join(' ')}
+        >
+          <Image
+            src={update.image}
+            alt={update.alt ?? update.title}
+            fill
+            loading="lazy"
+            sizes={
+              feature
+                ? '(max-width: 1024px) 100vw, 50vw'
+                : '(max-width: 768px) 100vw, 45vw'
+            }
+            className="object-cover transition-transform duration-[1200ms] ease-fluid group-hover:scale-[1.05]"
+          />
+        </div>
+      )}
+      <div
+        className={[
+          'flex flex-1 flex-col',
+          feature ? 'justify-center p-400 sm:p-500' : 'p-300',
+        ].join(' ')}
+      >
+        {/* A machine readable date beside the printed one, so the entry can be
+            cited and syndicated correctly. */}
+        <time dateTime={update.date} className="text-sm text-gold">
+          {formatUpdateDate(update.date)}
+        </time>
+        <h3
+          className={[
+            'mt-100 font-display font-600 leading-snug text-ivory',
+            feature ? 'text-3xl sm:text-4xl' : 'text-2xl',
+          ].join(' ')}
+        >
+          {update.title}
+        </h3>
+        <p
+          className={[
+            'mt-100 max-w-measure leading-relaxed text-ivory/65',
+            feature ? 'text-base sm:text-lg' : 'text-base',
+          ].join(' ')}
+        >
+          {update.body}
+        </p>
+      </div>
+    </article>
   );
 }
