@@ -15,6 +15,8 @@
  *
  *   FROM_TOKEN=… TO_TOKEN=… node scripts/copy-blob-store.mjs --apply
  *
+ *   FROM_TOKEN=… TO_TOKEN=… node scripts/copy-blob-store.mjs --private --apply
+ *
  * Dry run is the default on purpose. This writes into a live store, and the
  * first thing anyone should see is a list of what it intends to do.
  *
@@ -22,7 +24,7 @@
  * store rather than the blob, so a public document cannot be copied into a
  * private store or the reverse — run this once per pair.
  */
-import { list, put } from '@vercel/blob';
+import { get, list, put } from '@vercel/blob';
 
 const FROM = process.env.FROM_TOKEN;
 const TO = process.env.TO_TOKEN;
@@ -45,6 +47,38 @@ if (FROM === TO) {
    from the wrong row of a dashboard looks exactly like the right one. */
 const storeId = (t) => (t.split('_')[3] ?? 'unknown');
 
+/**
+ * Read one blob out of the source store.
+ *
+ * This used to be a bare `fetch(b.url)` for both access levels, which could
+ * never have worked for a private store however the comment above read: a
+ * private blob's URL returns 401 to an unauthenticated GET, which is the whole
+ * point of it being private. The private side goes through `get()`, where the
+ * token is what grants the read, and `useCache: false` so a copy taken right
+ * after a write carries the current bytes rather than a cached older set.
+ *
+ * `list()` does not report contentType — it is not on ListBlobResultBlob — so
+ * the type is taken from the read instead. Without this every copied object
+ * landed with whatever `put` inferred from the pathname.
+ */
+async function read(b) {
+  if (ACCESS === 'private') {
+    const found = await get(b.pathname, {
+      access: 'private',
+      useCache: false,
+      token: FROM,
+    });
+    if (!found) throw new Error('not found in source store');
+    if (!found.stream) throw new Error(`source returned ${found.statusCode}`);
+    const body = Buffer.from(await new Response(found.stream).arrayBuffer());
+    return { body, contentType: found.blob.contentType || undefined };
+  }
+  const res = await fetch(b.url);
+  if (!res.ok) throw new Error(`source returned ${res.status}`);
+  const body = Buffer.from(await res.arrayBuffer());
+  return { body, contentType: res.headers.get('content-type') || undefined };
+}
+
 const { blobs } = await list({ token: FROM, limit: 1000 });
 
 console.log(`from  store_${storeId(FROM)}  (${blobs.length} objects)`);
@@ -66,12 +100,10 @@ for (const b of blobs) {
     continue;
   }
   try {
-    const res = await fetch(b.url);
-    if (!res.ok) throw new Error(`source returned ${res.status}`);
-    const body = Buffer.from(await res.arrayBuffer());
+    const { body, contentType } = await read(b);
     await put(b.pathname, body, {
       access: ACCESS,
-      contentType: b.contentType || undefined,
+      contentType,
       addRandomSuffix: false,
       allowOverwrite: true,
       token: TO,
