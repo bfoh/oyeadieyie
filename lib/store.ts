@@ -1,4 +1,4 @@
-import { put, list, del } from '@vercel/blob';
+import { put, list, del, get } from '@vercel/blob';
 import {
   UPDATES,
   STATEMENTS,
@@ -129,8 +129,33 @@ const LEGACY_DOC = 'content/site.json';
 /* Old versions are pruned on write; a couple are kept as a cheap safety net. */
 const KEEP_VERSIONS = 3;
 
+/**
+ * Which token reaches which store.
+ *
+ * There are two stores now and they are not interchangeable. The PUBLIC one
+ * holds the content document and the photographs, which visitors fetch
+ * directly. The PRIVATE one holds the enquiries, which nobody may fetch.
+ *
+ * Vercel names the token of a connected store `BLOB_READ_WRITE_TOKEN`, and a
+ * project can only have one variable by that name — which is exactly why the
+ * second store could not be connected alongside the first. So the private
+ * store takes the default name and the public store gets an explicit one.
+ *
+ * `contentToken()` falls back to the default deliberately. Before the swap
+ * that fallback IS the public store, and after it the explicit variable is
+ * set; the code is correct on both sides of the change, so no deploy can land
+ * in the window between them and read the wrong store.
+ */
+export function contentToken(): string | undefined {
+  return process.env.CONTENT_BLOB_TOKEN || process.env.BLOB_READ_WRITE_TOKEN;
+}
+
+export function enquiriesToken(): string | undefined {
+  return process.env.ENQUIRIES_BLOB_TOKEN || process.env.BLOB_READ_WRITE_TOKEN;
+}
+
 export function storeConfigured(): boolean {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+  return Boolean(contentToken());
 }
 
 /** What the site shows before the office has changed anything. */
@@ -169,6 +194,66 @@ export function baseContent(): SiteContent {
 export const MAX_ENQUIRIES = 500;
 
 /**
+ * Where the enquiries live, and why they do not live with everything else.
+ *
+ * The content document is written with `access: 'public'`, and it has to be:
+ * the gallery photographs beside it are served straight to visitors from blob
+ * URLs, so the store's hostname is in the page's own HTML by design.
+ *
+ * Enquiries were in that same document. That meant the names, email addresses,
+ * organisations and messages of members of the public sat in a file any
+ * anonymous request could read — verified, not assumed: a plain GET with no
+ * token and no cookie returned the whole document, 200, in full. It was
+ * unlisted, not protected. Nothing checked anything before serving it.
+ *
+ * They are now their own blob, written `access: 'private'`, which the token can
+ * read and the internet cannot.
+ *
+ * Two things fall out of the move, both good. The public form no longer
+ * read-modify-writes the document that every public page render fetches — it
+ * touches only the inbox. And the inbox can sit at ONE fixed path instead of a
+ * new versioned path per write, because the CDN staleness that forced the
+ * versioning scheme is a property of public blobs; a private read is
+ * authenticated and takes `useCache: false`.
+ */
+const INBOX = 'enquiries/inbox.json';
+
+/** Read the inbox. Never throws: no inbox yet is an empty inbox. */
+export async function readEnquiries(): Promise<Enquiry[]> {
+  if (!storeConfigured()) return [];
+  try {
+    const found = await get(INBOX, {
+      access: 'private',
+      useCache: false,
+      token: enquiriesToken(),
+    });
+    /* `get` resolves to null when the blob does not exist, which is the
+       ordinary state before the first enquiry arrives. */
+    if (!found) return [];
+    const text = await new Response(found.stream as ReadableStream).text();
+    const parsed = JSON.parse(text) as { enquiries?: Enquiry[] };
+    return parsed.enquiries ?? [];
+  } catch {
+    /* Not found, unreadable, or malformed. An office with no enquiries and an
+       office whose inbox cannot be read look the same from here, and the
+       caller's job is the same either way: show nothing rather than fail. */
+    return [];
+  }
+}
+
+/** Replace the inbox. Only ever called from an authenticated route, or from
+ *  the engage route, which is the one public write path on this site. */
+export async function writeEnquiries(enquiries: Enquiry[]): Promise<void> {
+  await put(INBOX, JSON.stringify({ enquiries, updatedAt: new Date().toISOString() }, null, 2), {
+    access: 'private',
+    contentType: 'application/json',
+    addRandomSuffix: false,
+    allowOverwrite: true,
+    token: enquiriesToken(),
+  });
+}
+
+/**
  * Read the document.
  *
  * Never throws: a site that cannot reach its store should still render from
@@ -182,14 +267,14 @@ export const MAX_ENQUIRIES = 500;
  * taken before the first had landed. Writes must always read fresh.
  */
 async function newestDocument() {
-  const { blobs } = await list({ prefix: DOC_PREFIX });
+  const { blobs } = await list({ prefix: DOC_PREFIX, token: contentToken() });
   if (blobs.length) {
     /* Paths carry a millisecond stamp, so the highest name is the newest. */
     return [...blobs].sort((a, b) => b.pathname.localeCompare(a.pathname))[0];
   }
   /* Nothing versioned yet: fall back to the single document written before
      this scheme existed, so an existing store keeps its content. */
-  const legacy = await list({ prefix: LEGACY_DOC, limit: 1 });
+  const legacy = await list({ prefix: LEGACY_DOC, limit: 1, token: contentToken() });
   return legacy.blobs.find((b) => b.pathname === LEGACY_DOC) ?? null;
 }
 
@@ -217,7 +302,9 @@ export async function readContent(
       statements: parsed.statements ?? base.statements,
       events: parsed.events ?? base.events,
       gallery: parsed.gallery ?? base.gallery,
-      enquiries: parsed.enquiries ?? base.enquiries,
+      /* Deliberately NOT read from here. Enquiries live in a private blob;
+         see the note on INBOX. A caller that needs them asks for them. */
+      enquiries: [],
       projects: parsed.projects?.length ? parsed.projects : base.projects,
       impact: parsed.impact?.length ? parsed.impact : base.impact,
       contact: { ...base.contact, ...(parsed.contact ?? {}) },
@@ -230,8 +317,12 @@ export async function readContent(
 
 /** Write the document. Only ever called from an authenticated route. */
 export async function writeContent(content: SiteContent): Promise<void> {
+  /* `enquiries` is stripped on the way out, not merely left unread. A caller
+     holding a SiteContent it read earlier could otherwise write personal data
+     straight back into the public document and undo the split silently. */
+  const { enquiries: _omit, ...publicContent } = content;
   const body = JSON.stringify(
-    { ...content, updatedAt: new Date().toISOString() },
+    { ...publicContent, updatedAt: new Date().toISOString() },
     null,
     2,
   );
@@ -241,12 +332,13 @@ export async function writeContent(content: SiteContent): Promise<void> {
     access: 'public',
     contentType: 'application/json',
     addRandomSuffix: false,
+    token: contentToken(),
   });
 
   /* Prune, so the store does not fill with every revision ever made. Failing
      to prune must never fail the write: the content is already saved. */
   try {
-    const { blobs } = await list({ prefix: DOC_PREFIX });
+    const { blobs } = await list({ prefix: DOC_PREFIX, token: contentToken() });
     const stale = [...blobs]
       .sort((a, b) => b.pathname.localeCompare(a.pathname))
       .slice(KEEP_VERSIONS);
@@ -263,7 +355,11 @@ export async function saveImage(
 ): Promise<GalleryImage> {
   const safe = file.name.replace(/[^a-zA-Z0-9.-]/g, '-').toLowerCase();
   const pathname = `gallery/${Date.now()}-${safe}`;
-  const blob = await put(pathname, file, { access: 'public', addRandomSuffix: false });
+  const blob = await put(pathname, file, {
+    access: 'public',
+    addRandomSuffix: false,
+    token: contentToken(),
+  });
   return {
     id: pathname,
     url: blob.url,
@@ -283,7 +379,7 @@ export async function saveImage(
 export async function deleteImageFile(pathnameOrUrl: string): Promise<void> {
   if (!pathnameOrUrl) return;
   try {
-    await del(pathnameOrUrl);
+    await del(pathnameOrUrl, { token: contentToken() });
   } catch {
     /* The record is going either way; a missing file is not a failure. */
   }

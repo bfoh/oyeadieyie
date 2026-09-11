@@ -1,5 +1,5 @@
 import { Calendar } from '@/components/admin/Calendar';
-import { readContent, storeConfigured } from '@/lib/store';
+import { readContent, readEnquiries, storeConfigured } from '@/lib/store';
 
 /* Always fresh: an aide checking a date against the calendar must be looking
    at what the office saved a minute ago, not at a cached copy. */
@@ -7,6 +7,8 @@ export const dynamic = 'force-dynamic';
 
 export default async function CalendarPage() {
   const content = await readContent({ fresh: true });
+  /* The calendar draws requested dates, which live in the private inbox. */
+  const enquiries = await readEnquiries();
   return (
     <>
       <header className="mb-400">
@@ -22,7 +24,7 @@ export default async function CalendarPage() {
           replies to anyone. Tap a day to put an engagement on it.
         </p>
       </header>
-      <Calendar initial={content} configured={storeConfigured()} />
+      <Calendar initial={{ ...content, enquiries }} configured={storeConfigured()} />
     </>
   );
 }

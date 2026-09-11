@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { list, del } from '@vercel/blob';
 import { isAdmin } from '@/lib/admin-guard';
-import { readContent, storeConfigured } from '@/lib/store';
+import { readContent, storeConfigured, contentToken } from '@/lib/store';
 
 /**
  * Files in the store that nothing points at.
@@ -39,7 +39,9 @@ export async function GET() {
 
   const content = await readContent({ fresh: true });
   const used = referencedUrls(content);
-  const { blobs } = await list();
+  /* The public store only. The enquiries inbox lives in a different store
+     entirely and must never appear in a list of deletable orphans. */
+  const { blobs } = await list({ token: contentToken() });
 
   const orphans = blobs
     .filter((b) => !b.pathname.startsWith('content/'))
@@ -86,7 +88,7 @@ export async function POST(request: Request) {
     (u) => typeof u === 'string' && !used.has(u) && !u.includes('/content/'),
   );
 
-  await Promise.all(safe.map((u) => del(u).catch(() => {})));
+  await Promise.all(safe.map((u) => del(u, { token: contentToken() }).catch(() => {})));
 
   return NextResponse.json({ ok: true, deleted: safe.length, skipped: urls.length - safe.length });
 }

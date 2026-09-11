@@ -3,9 +3,9 @@ import { ENGAGE_ROUTES } from '@/lib/content';
 import {
   MAX_ENQUIRIES,
   newId,
-  readContent,
+  readEnquiries,
   storeConfigured,
-  writeContent,
+  writeEnquiries,
   type Enquiry,
 } from '@/lib/store';
 
@@ -97,10 +97,14 @@ export async function POST(request: Request) {
   let stored = false;
   if (storeConfigured()) {
     try {
-      const content = await readContent({ fresh: true });
+      /* The inbox only. This route used to read-modify-write the whole content
+         document — the same document every public page render fetches — which
+         meant the one place a stranger can write was also the place the site
+         reads from. It now touches nothing but the enquiries. */
+      const existing = await readEnquiries();
 
       const since = Date.now() - FLOOD_WINDOW_MS;
-      const recent = content.enquiries.filter(
+      const recent = existing.filter(
         (e) => Date.parse(e.receivedAt) > since,
       ).length;
       if (recent >= FLOOD_LIMIT) {
@@ -124,7 +128,7 @@ export async function POST(request: Request) {
 
       /* Trim only what the office has already dealt with, oldest first, so a
          flood can never push an unanswered enquiry out of the record. */
-      let enquiries = [enquiry, ...content.enquiries];
+      let enquiries = [enquiry, ...existing];
       if (enquiries.length > MAX_ENQUIRIES) {
         const keep = enquiries.filter((e) => e.status === 'new');
         const rest = enquiries
@@ -135,8 +139,7 @@ export async function POST(request: Request) {
         );
       }
 
-      content.enquiries = enquiries;
-      await writeContent(content);
+      await writeEnquiries(enquiries);
       stored = true;
     } catch {
       /* Fall through to email; the sender is told the truth either way. */

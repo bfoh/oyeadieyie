@@ -3,7 +3,7 @@ import { DashboardTiles } from '@/components/admin/DashboardTiles';
 import { ADINKRA, FAQ, CHIEF, isSupplied } from '@/lib/content';
 import { PHOTO_SETS } from '@/lib/presskit';
 import { BRAND_ASSETS } from '@/lib/brandAssets';
-import { readContent } from '@/lib/store';
+import { readContent, readEnquiries } from '@/lib/store';
 
 /**
  * What the office needs to see on opening the admin.
@@ -22,6 +22,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboard() {
   const content = await readContent({ fresh: true });
+  const enquiries = await readEnquiries();
 
   const photos = PHOTO_SETS.reduce((n, s) => n + s.shots.length, 0);
   const delivered = content.projects.filter((p) => p.status === 'Delivered').length;
@@ -41,14 +42,14 @@ export default async function AdminDashboard() {
     (e) => e.date >= new Date().toISOString().slice(0, 10),
   ).length;
 
-  const unanswered = content.enquiries.filter((e) => e.status === 'new').length;
+  const unanswered = enquiries.filter((e) => e.status === 'new').length;
 
   const stats = [
     {
       label: 'Waiting on a reply',
       value: unanswered,
-      note: content.enquiries.length
-        ? `${content.enquiries.length} received in all`
+      note: enquiries.length
+        ? `${enquiries.length} received in all`
         : 'No enquiries yet',
     },
     { label: 'Projects on the agenda', value: content.projects.length, note: `${delivered} delivered` },

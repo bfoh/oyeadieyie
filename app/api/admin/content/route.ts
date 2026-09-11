@@ -3,6 +3,8 @@ import { isAdmin } from '@/lib/admin-guard';
 import {
   readContent,
   writeContent,
+  readEnquiries,
+  writeEnquiries,
   storeConfigured,
   newId,
   deleteImageFile,
@@ -341,8 +343,12 @@ export async function POST(request: Request) {
       break;
     }
 
+    /* Enquiries are a separate, private blob. These two actions read and write
+       it directly rather than going through the public document, which no
+       longer carries them. */
     case 'set-enquiry': {
-      const found = content.enquiries.find((e) => e.id === body.id);
+      const inbox = await readEnquiries();
+      const found = inbox.find((e) => e.id === body.id);
       if (!found) {
         return NextResponse.json({ error: 'not_found' }, { status: 404 });
       }
@@ -352,12 +358,19 @@ export async function POST(request: Request) {
         found.status = status as (typeof allowed)[number];
       }
       if ('note' in body) found.note = clean(body.note, 600) || undefined;
-      break;
+      /* Written here and returned here. Falling through to the shared
+         writeContent at the foot of this switch would drop the change on the
+         floor: that function writes the PUBLIC document, which no longer
+         carries enquiries at all. */
+      await writeEnquiries(inbox);
+      return NextResponse.json({ ok: true });
     }
 
-    case 'delete-enquiry':
-      content.enquiries = content.enquiries.filter((e) => e.id !== body.id);
-      break;
+    case 'delete-enquiry': {
+      const inbox = await readEnquiries();
+      await writeEnquiries(inbox.filter((e) => e.id !== body.id));
+      return NextResponse.json({ ok: true });
+    }
 
     case 'add-project': {
       const f = body.fields ?? {};

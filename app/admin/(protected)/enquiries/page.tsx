@@ -1,12 +1,14 @@
 import { Enquiries } from '@/components/admin/Enquiries';
-import { readContent, storeConfigured } from '@/lib/store';
+import { readEnquiries, readContent, storeConfigured } from '@/lib/store';
 
 /* Always current: the office is looking for what has just come in. */
 export const dynamic = 'force-dynamic';
 
 export default async function EnquiriesPage() {
   const content = await readContent({ fresh: true });
-  const unanswered = content.enquiries.filter((e) => e.status === 'new').length;
+  /* The inbox is a separate, private blob; see lib/store.ts. */
+  const enquiries = await readEnquiries();
+  const unanswered = enquiries.filter((e) => e.status === 'new').length;
 
   return (
     <>
@@ -34,7 +36,7 @@ export default async function EnquiriesPage() {
         </div>
       )}
 
-      <Enquiries initial={content.enquiries} events={content.events} />
+      <Enquiries initial={enquiries} events={content.events} />
     </>
   );
 }

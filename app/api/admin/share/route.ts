@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
 import { isAdmin } from '@/lib/admin-guard';
+import { contentToken } from '@/lib/store';
 import { storeConfigured } from '@/lib/store';
 
 /**
