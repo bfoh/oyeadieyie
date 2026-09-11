@@ -335,7 +335,7 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
               editingUpdate ? 'border-gold/40' : 'border-white/10',
             ].join(' ')}
           >
-            <h2 className="font-display text-2xl font-600 text-ivory">
+            <h2 className="text-2xl font-700 tracking-tight text-ivory">
               {editingUpdate ? 'Correct the update' : 'Post an update'}
             </h2>
             <p className="mt-100 text-sm leading-relaxed text-ivory/60">
@@ -400,7 +400,7 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
           </section>
 
           <section>
-            <h2 className="font-display text-2xl font-600 text-ivory">
+            <h2 className="text-2xl font-700 tracking-tight text-ivory">
               Published <span className="text-ivory/40">({content.updates.length})</span>
             </h2>
             <Overflow shown={HOME_LIMITS.updates} total={content.updates.length} what="updates" />
@@ -434,7 +434,7 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
                         <time dateTime={u.date} className="text-xs font-semibold uppercase tracking-[0.14em] text-gold">
                           {formatDate(u.date)}
                         </time>
-                        <h3 className="mt-75 font-display text-xl font-600 text-ivory">{u.title}</h3>
+                        <h3 className="mt-75 text-xl font-600 tracking-tight text-ivory">{u.title}</h3>
                         {u.body && <p className="mt-100 text-sm leading-relaxed text-ivory/65">{u.body}</p>}
                       </div>
                       </div>
@@ -502,7 +502,7 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
               editingStatement ? 'border-gold/40' : 'border-white/10',
             ].join(' ')}
           >
-            <h2 className="font-display text-2xl font-600 text-ivory">
+            <h2 className="text-2xl font-700 tracking-tight text-ivory">
               {editingStatement ? 'Correct the statement' : 'Post a statement'}
             </h2>
             <p className="mt-100 text-sm leading-relaxed text-ivory/60">
@@ -594,7 +594,7 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
           </section>
 
           <section>
-            <h2 className="font-display text-2xl font-600 text-ivory">
+            <h2 className="text-2xl font-700 tracking-tight text-ivory">
               Published <span className="text-ivory/40">({content.statements.length})</span>
             </h2>
             <Overflow shown={HOME_LIMITS.statements} total={content.statements.length} what="statements" />
@@ -636,9 +636,9 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
                               {st.occasion && st.date ? ' · ' : ''}
                               {st.date ? formatDate(st.date) : ''}
                             </p>
-                            <h3 className="mt-75 font-display text-xl font-600 text-ivory">{st.title}</h3>
+                            <h3 className="mt-75 text-xl font-600 tracking-tight text-ivory">{st.title}</h3>
                             {st.pullQuote && (
-                              <p className="mt-100 font-display text-lg text-ivory/80">{st.pullQuote}</p>
+                              <p className="mt-100 text-lg font-600 text-ivory/80">{st.pullQuote}</p>
                             )}
                             <p className="mt-100 text-sm leading-relaxed text-ivory/65">{st.body}</p>
                           </div>
@@ -706,7 +706,7 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
               editingEvent ? 'border-gold/40' : 'border-white/10',
             ].join(' ')}
           >
-            <h2 className="font-display text-2xl font-600 text-ivory">
+            <h2 className="text-2xl font-700 tracking-tight text-ivory">
               {editingEvent ? 'Change the event' : 'Add an event'}
             </h2>
             <p className="mt-100 text-sm leading-relaxed text-ivory/60">
@@ -783,7 +783,7 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
           </section>
 
           <section>
-            <h2 className="font-display text-2xl font-600 text-ivory">
+            <h2 className="text-2xl font-700 tracking-tight text-ivory">
               In the calendar <span className="text-ivory/40">({content.events.length})</span>
             </h2>
             <Overflow shown={HOME_LIMITS.events} total={upcomingEvents.length} what="events ahead" />
@@ -824,7 +824,7 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
                               </span>
                             )}
                           </div>
-                          <h3 className="mt-75 font-display text-xl font-600 text-ivory">{ev.title}</h3>
+                          <h3 className="mt-75 text-xl font-600 tracking-tight text-ivory">{ev.title}</h3>
                           <p className="mt-50 text-sm text-ivory/60">
                             {[ev.time, ev.place].filter(Boolean).join(' · ')}
                           </p>
@@ -886,7 +886,7 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
       {tab === 'gallery' && (
         <div className="mt-400">
           <section className="rounded-2xl border border-white/10 bg-ebony-raised p-300">
-            <h2 className="font-display text-2xl font-600 text-ivory">Add a photograph</h2>
+            <h2 className="text-2xl font-700 tracking-tight text-ivory">Add a photograph</h2>
             <p className="mt-100 max-w-measure text-sm leading-relaxed text-ivory/60">
               Goes into the gallery on the home page. JPEG, PNG, WebP or AVIF, up
               to 8 MB. A description is required: every photograph on this site
@@ -915,7 +915,7 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
             </div>
           </section>
 
-          <h2 className="mt-500 font-display text-2xl font-600 text-ivory">
+          <h2 className="mt-500 text-2xl font-700 tracking-tight text-ivory">
             In the gallery <span className="text-ivory/40">({content.gallery.length})</span>
           </h2>
           <Overflow shown={HOME_LIMITS.gallery} total={content.gallery.length} what="photographs" />
@@ -959,7 +959,7 @@ export function ContentManager({ initial, configured }: { initial: SiteContent; 
       {tab === 'contact' && (
         <div className="mt-400 max-w-[620px]">
           <section className="rounded-2xl border border-white/10 bg-ebony-raised p-300">
-            <h2 className="font-display text-2xl font-600 text-ivory">Contact details</h2>
+            <h2 className="text-2xl font-700 tracking-tight text-ivory">Contact details</h2>
             <p className="mt-100 text-sm leading-relaxed text-ivory/60">
               These fill the blanks the public page currently leaves out. A value
               in brackets counts as unset, and its line stays hidden rather than

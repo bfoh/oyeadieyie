@@ -83,7 +83,7 @@ export function StoredFiles() {
     <section className="mt-500 rounded-2xl border border-white/10 bg-ebony-raised p-300">
       <div className="flex flex-wrap items-start justify-between gap-200">
         <div>
-          <h2 className="font-display text-2xl font-600 text-ivory">Stored files</h2>
+          <h2 className="text-2xl font-700 tracking-tight text-ivory">Stored files</h2>
           <p className="mt-100 max-w-[62ch] text-sm leading-relaxed text-ivory/60">
             Pictures kept in the store that nothing on the site points at — a
             photograph chosen for an update that was never posted, or a copy

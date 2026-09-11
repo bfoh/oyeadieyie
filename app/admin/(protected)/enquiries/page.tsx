@@ -14,7 +14,7 @@ export default async function EnquiriesPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold">
           Written to the office
         </p>
-        <h1 className="mt-100 font-display text-4xl font-600 leading-tight text-ivory sm:text-5xl">
+        <h1 className="mt-100 text-4xl font-700 tracking-tight leading-tight text-ivory sm:text-5xl">
           {unanswered > 0 ? `${unanswered} waiting on a reply` : 'Enquiries'}
         </h1>
         <p className="mt-200 max-w-measure text-base leading-relaxed text-ivory/65">

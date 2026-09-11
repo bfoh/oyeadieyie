@@ -324,7 +324,7 @@ export function BrandingHub() {
 
         <section className="rounded-2xl border border-white/10 bg-ebony-raised p-300">
           <h2 className="text-xs uppercase tracking-[0.18em] text-ivory/40">Customise</h2>
-          <p className="mt-100 font-display text-2xl font-600 text-ivory">{asset.title}</p>
+          <p className="mt-100 text-2xl font-700 tracking-tight text-ivory">{asset.title}</p>
           <p className="mt-75 text-sm leading-relaxed text-ivory/60">{asset.body}</p>
 
           <div className="mt-300 grid gap-200">
@@ -509,7 +509,7 @@ export function BrandingHub() {
             >
               <AssetThumb asset={a} />
               <div className="flex flex-1 flex-col p-100 pt-200">
-                <h3 className="font-display text-xl font-600 text-ivory">{a.title}</h3>
+                <h3 className="text-xl font-600 tracking-tight text-ivory">{a.title}</h3>
                 <p className="mt-75 flex-1 text-sm leading-relaxed text-ivory/60">{a.body}</p>
                 <div className="mt-200 flex flex-wrap items-center gap-75">
                   {a.formats.map((f) => (

@@ -40,7 +40,7 @@ export default function AdminLogin() {
         <p className="mt-400 text-xs font-semibold uppercase tracking-[0.2em] text-gold">
           Office of the {CHIEF.title}
         </p>
-        <h1 className="mt-100 text-balance font-display text-4xl font-600 leading-tight text-ivory">
+        <h1 className="mt-100 text-balance text-4xl font-700 tracking-tight leading-tight text-ivory">
           Palace admin
         </h1>
         <p className="mx-auto mt-200 max-w-[34ch] text-sm leading-relaxed text-ivory/60">

@@ -94,7 +94,7 @@ export default async function ChecklistPage() {
     <>
       <header>
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold">Before the next push</p>
-        <h1 className="mt-100 font-display text-4xl font-600 leading-tight text-ivory sm:text-5xl">
+        <h1 className="mt-100 text-4xl font-700 tracking-tight leading-tight text-ivory sm:text-5xl">
           What the site is waiting on
         </h1>
         <p className="mt-200 max-w-measure text-base leading-relaxed text-ivory/65">
@@ -115,7 +115,7 @@ export default async function ChecklistPage() {
           >
             <div className="flex flex-wrap items-baseline gap-200">
               <span className="font-mono text-xs text-ivory/40">{String(i + 1).padStart(2, '0')}</span>
-              <h2 className="flex-1 font-display text-xl font-600 text-ivory">{item.title}</h2>
+              <h2 className="flex-1 text-xl font-600 tracking-tight text-ivory">{item.title}</h2>
               <span
                 className={[
                   'rounded-full px-100 py-25 text-xs font-semibold',

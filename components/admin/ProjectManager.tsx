@@ -184,7 +184,7 @@ export function ProjectManager({
       {/* ---- The record itself -------------------------------------- */}
       <section>
         <div className="flex flex-wrap items-baseline justify-between gap-200">
-          <h2 className="font-display text-3xl font-600 text-ivory">The projects</h2>
+          <h2 className="text-3xl font-700 tracking-tight text-ivory">The projects</h2>
           <span className="text-sm text-ivory/50">
             {projects.length} on the agenda ·{' '}
             {projects.filter((p) => p.status === 'Delivered').length} delivered
@@ -222,7 +222,7 @@ export function ProjectManager({
                         </span>
                       )}
                     </div>
-                    <h3 className="mt-100 truncate font-display text-xl font-600 text-ivory">
+                    <h3 className="mt-100 truncate text-xl font-600 tracking-tight text-ivory">
                       {p.title}
                     </h3>
                   </div>
@@ -358,7 +358,7 @@ export function ProjectManager({
 
         {adding ? (
           <div className="mt-300 grid gap-200 rounded-2xl border border-gold/30 bg-ebony-raised p-300">
-            <h3 className="font-display text-xl font-600 text-ivory">A new project</h3>
+            <h3 className="text-xl font-600 tracking-tight text-ivory">A new project</h3>
             <div className="grid gap-100">
               <label className={label} htmlFor="new-title">Title</label>
               <input
@@ -440,7 +440,7 @@ export function ProjectManager({
 
       {/* ---- The figures above the record --------------------------- */}
       <section className="mt-600">
-        <h2 className="font-display text-3xl font-600 text-ivory">The figures</h2>
+        <h2 className="text-3xl font-700 tracking-tight text-ivory">The figures</h2>
         <p className="mt-100 max-w-measure text-sm leading-relaxed text-ivory/55">
           These are the four numbers across the top of the development section.
           The public page states underneath them that they are the office&apos;s
@@ -456,7 +456,7 @@ export function ProjectManager({
               <li key={s.id} className="grid min-w-0 gap-200 rounded-2xl border border-white/10 bg-ebony-raised p-300">
                 {derived ? (
                   <>
-                    <p className="font-display text-4xl font-600 text-gold">{projects.length}</p>
+                    <p className="text-4xl font-700 tracking-tight text-gold">{projects.length}</p>
                     <div>
                       <p className="text-base text-ivory">{s.label}</p>
                       <p className="mt-50 text-xs leading-relaxed text-ivory/45">

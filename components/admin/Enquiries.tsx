@@ -231,7 +231,7 @@ export function Enquiries({
                       </span>
                       <span className="text-xs text-ivory/40">{formatWhen(e.receivedAt)}</span>
                     </div>
-                    <h2 className="mt-200 font-display text-2xl font-600 text-ivory">{e.name}</h2>
+                    <h2 className="mt-200 text-2xl font-700 tracking-tight text-ivory">{e.name}</h2>
                     <p className="mt-25 text-sm text-ivory/65">
                       {e.organisation} · {e.email}
                     </p>

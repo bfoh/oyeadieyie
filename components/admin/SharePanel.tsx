@@ -107,7 +107,7 @@ export function SharePanel({ url, text, filename, blob, onClose }: Props) {
     <div className="border-t border-white/10 bg-ebony p-300">
       <div className="flex items-start justify-between gap-200">
         <div>
-          <h3 className="font-display text-xl font-600 text-ivory">Share this</h3>
+          <h3 className="text-xl font-600 tracking-tight text-ivory">Share this</h3>
           <p className="mt-50 text-xs leading-relaxed text-ivory/55">
             Published to a link the office can post anywhere.
           </p>

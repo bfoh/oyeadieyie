@@ -20,9 +20,11 @@ export default async function AdminLayout({
   if (!verifyToken(token)) redirect('/admin/login');
 
   return (
-    <div className="flex min-h-[100svh] flex-col bg-ebony text-ivory lg:flex-row">
+    /* A band across the top, the work beneath it at full width. The sidebar
+       this replaced surrendered 248px to seven links read once a session. */
+    <div className="flex min-h-[100svh] flex-col bg-ebony text-ivory">
       <AdminNav />
-      <main className="flex-1 overflow-x-hidden px-300 py-400 sm:px-500 sm:py-500">
+      <main className="flex-1 overflow-x-hidden px-300 py-500 sm:px-500 sm:py-600">
         <div className="mx-auto w-full max-w-[1180px]">{children}</div>
       </main>
     </div>

@@ -13,7 +13,7 @@ export default function BrandingHubPage() {
               <span className="h-[5px] w-[5px] rounded-full bg-gold" aria-hidden="true" />
               Office of the Nkosuo Hene
             </span>
-            <h1 className="mt-300 font-display text-5xl font-600 leading-[1.02] text-ivory sm:text-6xl">
+            <h1 className="mt-300  text-5xl font-600 leading-[1.02] text-ivory sm:text-6xl">
               Brand
               <br />
               <span className="text-gold">engine</span>
@@ -27,15 +27,15 @@ export default function BrandingHubPage() {
 
           <dl className="flex gap-400 rounded-2xl border border-white/10 bg-ebony px-300 py-200">
             <div>
-              <dd className="font-display text-3xl font-600 text-ivory">{BRAND_ASSETS.length}</dd>
+              <dd className="text-3xl font-700 tracking-tight text-ivory">{BRAND_ASSETS.length}</dd>
               <dt className="mt-25 text-xs uppercase tracking-[0.14em] text-gold">Assets</dt>
             </div>
             <div>
-              <dd className="font-display text-3xl font-600 text-ivory">300</dd>
+              <dd className="text-3xl font-700 tracking-tight text-ivory">300</dd>
               <dt className="mt-25 text-xs uppercase tracking-[0.14em] text-gold">DPI print</dt>
             </div>
             <div>
-              <dd className="font-display text-3xl font-600 text-ivory">{formats.size}</dd>
+              <dd className="text-3xl font-700 tracking-tight text-ivory">{formats.size}</dd>
               <dt className="mt-25 text-xs uppercase tracking-[0.14em] text-gold">Formats</dt>
             </div>
           </dl>

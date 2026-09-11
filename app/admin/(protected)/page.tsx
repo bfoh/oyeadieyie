@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { DashboardTiles } from '@/components/admin/DashboardTiles';
 import { ADINKRA, FAQ, CHIEF, isSupplied } from '@/lib/content';
 import { PHOTO_SETS } from '@/lib/presskit';
 import { BRAND_ASSETS } from '@/lib/brandAssets';
@@ -81,23 +82,24 @@ export default async function AdminDashboard() {
 
   return (
     <>
-      <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold">
-          {CHIEF.place}
-        </p>
-        <h1 className="mt-100 font-display text-4xl font-600 leading-tight text-ivory sm:text-5xl">
+      {/* The way in first, the report second. Someone opening this has a task
+          in mind; the numbers are what they read once they are done. */}
+      <DashboardTiles />
+
+      <header className="mt-700 border-t border-ebony-line pt-500">
+        <h2 className="text-2xl font-700 tracking-tight text-ivory sm:text-3xl">
           The office at a glance
-        </h1>
-        <p className="mt-200 max-w-measure text-base leading-relaxed text-ivory/65">
+        </h2>
+        <p className="mt-100 max-w-measure text-base leading-relaxed text-ivory/65">
           Counted from the site as it stands right now, so these numbers and the
           public page can never disagree.
         </p>
       </header>
 
-      <dl className="mt-500 grid grid-cols-2 gap-200 lg:grid-cols-4">
+      <dl className="mt-400 grid grid-cols-2 gap-200 lg:grid-cols-4">
         {stats.map((s) => (
           <div key={s.label} className="rounded-2xl border border-white/10 bg-ebony-raised p-300">
-            <dd className="font-display text-4xl font-600 leading-none text-ivory">{s.value}</dd>
+            <dd className="text-4xl font-700 tracking-tight leading-none text-ivory">{s.value}</dd>
             <dt className="mt-200 text-sm font-semibold leading-snug text-ivory/85">{s.label}</dt>
             <dd className="mt-50 text-xs text-ivory/50">{s.note}</dd>
           </div>
@@ -106,7 +108,7 @@ export default async function AdminDashboard() {
 
       <div className="mt-500 grid gap-300 lg:grid-cols-2">
         <section className="rounded-2xl border border-white/10 bg-ebony-raised p-300">
-          <h2 className="font-display text-2xl font-600 text-ivory">Still outstanding</h2>
+          <h2 className="text-2xl font-700 tracking-tight text-ivory">Still outstanding</h2>
           {missing.length === 0 ? (
             <p className="mt-200 text-base text-ivory/65">
               Nothing outstanding. The record is complete as published.
@@ -136,7 +138,7 @@ export default async function AdminDashboard() {
         </section>
 
         <section className="rounded-2xl border border-white/10 bg-ebony-raised p-300">
-          <h2 className="font-display text-2xl font-600 text-ivory">
+          <h2 className="text-2xl font-700 tracking-tight text-ivory">
             {unanswered > 0 ? 'Somebody is waiting' : 'Issue something'}
           </h2>
           {unanswered > 0 && (

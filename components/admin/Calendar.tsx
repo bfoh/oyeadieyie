@@ -87,7 +87,7 @@ function EntryCard({ entry, compact }: { entry: CalendarEntry; compact?: boolean
       </div>
       <p
         className={[
-          'mt-75 font-display font-600 leading-snug text-ivory',
+          'mt-75  font-600 leading-snug text-ivory',
           compact ? 'text-base' : 'text-lg',
         ].join(' ')}
       >
@@ -622,7 +622,7 @@ export function Calendar({
           <button type="button" onClick={() => step(-1)} className={navBtn} aria-label="Previous month">
             ←
           </button>
-          <h2 className="min-w-[7.5rem] whitespace-nowrap text-center font-display text-xl font-600 text-ivory sm:min-w-[9.5rem] sm:text-3xl">
+          <h2 className="min-w-[7.5rem] whitespace-nowrap text-center text-xl font-600 tracking-tight text-ivory sm:min-w-[9.5rem] sm:text-3xl">
             {monthLabel(year, month)}
           </h2>
           <button type="button" onClick={() => step(1)} className={navBtn} aria-label="Next month">
@@ -996,7 +996,7 @@ export function Calendar({
 
       {/* ---- What is next ------------------------------------------- */}
       <section className="mt-600">
-        <h2 className="font-display text-2xl font-600 text-ivory">Still ahead</h2>
+        <h2 className="text-2xl font-700 tracking-tight text-ivory">Still ahead</h2>
         {ahead.length === 0 ? (
           <p className="mt-200 text-sm text-ivory/55">
             Nothing in the calendar from today onwards. Add an event on Manage
