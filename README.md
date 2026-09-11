@@ -558,17 +558,61 @@ month-long `max-age`, so overwriting one path meant a read straight after a
 write returned the *previous* document, and the next write then persisted that
 stale copy over the office's change. A new path each time has no cached
 version to return. Uploaded photographs live in the same store under
-`gallery/`.
+`gallery/`. The enquiries do NOT live in that document; see below.
+
+### Two stores, two tokens
+
+There are two Blob stores, and they are not interchangeable.
+
+| Store | Access | Holds | Token |
+|---|---|---|---|
+| `adrobaa-content` | **public** | the content document, gallery photographs, share images | `CONTENT_BLOB_TOKEN` |
+| `adrobaa-inbox` | **private** | the enquiries the public form captures | `BLOB_READ_WRITE_TOKEN` |
 
 ```
-BLOB_READ_WRITE_TOKEN=...   # appears once the Blob store is connected
+CONTENT_BLOB_TOKEN=...       # the public store
+BLOB_READ_WRITE_TOKEN=...    # the private store, written by Vercel on connect
 ```
 
-The store `adrobaa-content` exists on the project but must be **connected**
-in the Vercel dashboard under Storage — the CLI cannot complete that step
-without a prompt. Until it is connected the site falls back to the content
-compiled into the build, the admin says so plainly, and writes return 503
-rather than pretending to save.
+**Why the content store is public.** Gallery photographs are served straight
+to visitors from blob URLs through `next/image`, so the store's hostname is in
+the page's own HTML by design. It cannot be private without routing every
+photograph through the app.
+
+**Why the enquiries are not in it.** They used to be, inside the same content
+document — which meant the names, email addresses, organisations and messages
+of members of the public sat in a file any anonymous request could read. That
+was verified, not theorised: a plain GET with no token and no cookie returned
+the whole document. It was unlisted, not protected.
+
+**Access is a property of the STORE, not of the blob.** `put(..., { access:
+'private' })` into a public store fails outright with *"Cannot use private
+access on a public store"*. That is why this is two stores rather than one
+store holding two kinds of object, and it is the first thing anyone revisiting
+this will get wrong.
+
+**Why the names are that way round.** Vercel writes `BLOB_READ_WRITE_TOKEN`
+when a store is connected, and a project may hold only one variable by that
+name — which is exactly what blocks connecting a second store. So the private
+store takes the default name and the public store gets an explicit one.
+`contentToken()` and `enquiriesToken()` in `lib/store.ts` both fall back to the
+default deliberately: the code is correct on either side of that swap, so no
+deployment can land midway and read the wrong store.
+
+**Connecting a store no longer needs the dashboard.** This used to say the CLI
+could not finish the job without a prompt. It can:
+
+```bash
+vercel blob create-store <name> --access private --yes   # creates AND connects
+```
+
+Deleting one still cannot be done from here — Vercel refuses the operation for
+agents and requires a person to run it interactively, which is correct for
+something irreversible.
+
+Until a content store is connected the site falls back to the content compiled
+into the build, the admin says so plainly, and writes return 503 rather than
+pretending to save.
 
 Updates and events each take a photograph. Attachments are uploaded with
 `mode=attachment`, which stores the file but deliberately does NOT add it to
@@ -612,11 +656,34 @@ check it. The form now takes an optional requested date, and the inbox compares
 it against the events the office already keeps — flagging anything within two
 days, because a durbar occupies the days around it as well as its own.
 
-**The form is a public write path**, the one place a stranger can grow a
-document that every public page render fetches. Hence the flood window in the
+**Enquiries live in their own private store**, `adrobaa-inbox`, at the single
+path `enquiries/inbox.json`. They are not in the content document and must
+never be put back there: that document is public by necessity, because the
+gallery is served from the same store. `writeContent()` strips `enquiries` on
+the way out rather than merely not reading them, so a caller holding a
+`SiteContent` it read earlier cannot write personal data back into the public
+document and undo this silently.
+
+Read them with `readEnquiries()` and write them with `writeEnquiries()`. The
+public document knows nothing about them, and `readContent()` returns an empty
+array for the field.
+
+**The inbox sits at one fixed path**, unlike the versioned content document.
+The CDN staleness that forced the versioning scheme is a property of *public*
+blobs; a private read is authenticated and takes `useCache: false`, so a read
+straight after a write returns what was just written.
+
+**The form is a public write path** — the one place a stranger can write
+anything. It no longer touches the document that every public page render
+fetches: it reads and writes the inbox alone. Hence the flood window in the
 route, and `MAX_ENQUIRIES`. Trimming only ever removes enquiries the office has
 already dealt with, oldest first, so a flood can never push an unanswered one
 out of the record.
+
+**The orphan sweeper must never see the inbox.** `/api/admin/files` lists and
+deletes against the public store explicitly, with `contentToken()`. Without
+that it would eventually see `enquiries/inbox.json` as a file nothing points
+at, and offer the office a button to delete its own enquiries.
 
 ### Photographs the office uploads
 
